@@ -23,24 +23,24 @@ struct Pose{
 
 struct RobotParams{
 	double maxAngle;
-	double d;
+	double h;
 	double w;
 	double l;
-	double steering;
 };
 
 class Steering_Control {
 private:
 	RobotParams params;
 	double length;
-	double actualAngle;
 	double velocity;
+	double actualAngle;
 	double deltaTime;
 	double deltaAngle;
+
 	bool collision(double angle, double radius);
 
 public:
-	Steering_Control(RobotParams robot, double length);
+	Steering_Control(RobotParams robot, double length, double deltaTime, double deltaAngle, double velocity);
 	~Steering_Control();
 
 	void printPosition(Pose p, string s);

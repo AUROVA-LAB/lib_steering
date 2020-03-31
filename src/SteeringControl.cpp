@@ -1,11 +1,11 @@
 #include "../includes/SteeringControl.h"
 
-Steering_Control::Steering_Control(RobotParams robot, double length) {
+Steering_Control::Steering_Control(RobotParams robot, double length, double deltaTime, double deltaAngle, double velocity){
 	this->length = length;
 	this->params = robot;
-	this->deltaTime = 0.1;
-	this->deltaAngle = 1;
-	this->velocity = 1;
+	this->deltaTime = deltaTime;
+	this->deltaAngle = deltaAngle;
+	this->velocity = velocity;
 	this->actualAngle=0;
 }
 
@@ -70,7 +70,7 @@ Pose Steering_Control::getNextPose(Pose initPose, double angle, int sense){
 	// Calculate with radians
 	double range = velocity * deltaTime;
 	double radians=angle*(M_PI/180);
-	double deltaSteering = (range/params.d)*sin(radians);
+	double deltaSteering = (range/params.l)*sin(radians);
 
 	double degrees = (deltaSteering *180)/M_PI;
 
