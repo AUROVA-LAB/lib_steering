@@ -6,7 +6,7 @@ INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
 include(GNUInstallDirs)
 
 add_library(steering SHARED
-    src/SteeringControl.cpp
+    src/steering_control.cpp
 )
 
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${EIGEN_LIBRARIES})

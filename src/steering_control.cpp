@@ -1,12 +1,11 @@
-#include "../includes/SteeringControl.h"
+#include "../includes/steering_control.h"
 
 Steering_Control::Steering_Control(RobotParams robot, double length, double deltaTime, double deltaAngle, double velocity){
-	this->length = length;
-	this->params = robot;
-	this->deltaTime = deltaTime;
-	this->deltaAngle = deltaAngle;
-	this->velocity = velocity;
-	this->actualAngle=0;
+	this->length_ = length;
+	this->st_params_ = robot;
+	this->deltaTime_ = deltaTime;
+	this->deltaAngle_ = deltaAngle;
+	this->velocity_ = velocity;
 }
 
 Steering_Control::~Steering_Control() {
@@ -16,9 +15,6 @@ bool Steering_Control::collision(double angle, double radius){
 	return false;
 }
 
-void Steering_Control::printPosition(Pose p, string s){
-	cout << "Position '" << s << "' : " << "(" << p.coordinates[0] << "," << p.coordinates[1] << "," << p.coordinates[2] << "," << p.coordinates[3] << ")" << endl;
-}
 
 Direction Steering_Control::getBestSteering(Pose initPose, Pose finalPose){
 
@@ -31,16 +27,18 @@ Direction Steering_Control::getBestSteering(Pose initPose, Pose finalPose){
 	Pose nextPoseBackward=initPose;
 	Pose nextPoseForward=initPose;
 	Pose bestPose=initPose;
-	this->actualAngle=initPose.coordinates[3];
 
 	// Check all angles
-	for(double ang=(-params.maxAngle); ang<=params.maxAngle; ang+= deltaAngle){
-		if(!collision(ang,this->length)){
+	for(double ang=(-this->st_params_.maxAngle); ang<=this->st_params_.maxAngle; ang+= this->deltaAngle_){
+		if(!collision(ang,this->length_)){
 			nextPoseForward = initPose;
 			nextPoseBackward = initPose;
-			for(double i=(this->deltaTime*this->velocity); i<=length; i+=(this->deltaTime*this->velocity)){
+
+			// Check all the positions of each angle for a distance 'length_'
+			for(double i=(this->deltaTime_*this->velocity_); i<=this->length_; i+=(this->deltaTime_*this->velocity_)){
 				nextPoseForward = getNextPose(nextPoseForward,ang,1);
 				nextPoseBackward = getNextPose(nextPoseBackward,ang,-1);
+
 				// Check the best pose forward
 				newDistance = calculateMahalanobisDistance(nextPoseForward,finalPose);
 				if( newDistance< minDistance){
@@ -49,6 +47,7 @@ Direction Steering_Control::getBestSteering(Pose initPose, Pose finalPose){
 					bestPose = nextPoseForward;
 					minDistance = newDistance;
 				}
+
 				// Check the best pose backward
 				newDistance = calculateMahalanobisDistance(nextPoseBackward,finalPose);
 				if( newDistance< minDistance){
@@ -57,6 +56,7 @@ Direction Steering_Control::getBestSteering(Pose initPose, Pose finalPose){
 					bestPose = nextPoseBackward;
 					minDistance = newDistance;
 				}
+
 			}
 		}
 	}
@@ -68,17 +68,17 @@ Pose Steering_Control::getNextPose(Pose initPose, double angle, int sense){
 	Pose nextPose=initPose;
 
 	// Calculate with radians
-	double range = velocity * deltaTime;
+	double range = this->velocity_ * this->deltaTime_;
 	double radians=angle*(M_PI/180);
-	double deltaSteering = (range/params.l)*sin(radians);
+	double deltaSteering = (range/this->st_params_.l)*sin(radians);
 
 	double degrees = (deltaSteering *180)/M_PI;
 
 	// Saved in degrees
 	nextPose.coordinates[3] += degrees;
 
+	// Calculate the position
 	double radiansSteering = nextPose.coordinates[3]*(M_PI/180);
-
 	double deltaX = range * cos(radiansSteering) * cos(radians);
 	double deltaY = range * sin(radiansSteering) * cos(radians);
 
@@ -98,6 +98,7 @@ double Steering_Control::calculateMahalanobisDistance(Pose p1, Pose p2){
 	Matrix4d matrixQ;
 	Matrix4d matrixZ;
 
+	// Initialize values
 	for (unsigned int i = 0; i < p2.coordinates.size(); i++)
 	{
 		vectorX(i)= p2.coordinates[i];
@@ -115,6 +116,7 @@ double Steering_Control::calculateMahalanobisDistance(Pose p1, Pose p2){
 		}
 	}
 
+	// Calculate the Mahalanobis distance
 	vectorZ = vectorG-vectorX;
 	matrixZ = matrixP*matrixQ*matrixP.transpose();
 	double aux = (vectorZ.transpose()*matrixZ.inverse()*vectorZ).value();
