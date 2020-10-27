@@ -39,7 +39,7 @@ private:
 	double deltaTime;
 	double deltaAngle;
 
-	bool collision(double angle, double radius);
+	bool collision(double angle, double radius, const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles);
 
 public:
 	Steering_Control(RobotParams robot, double length, double deltaTime, double deltaAngle, double velocity);

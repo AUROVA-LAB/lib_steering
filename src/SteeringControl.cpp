@@ -15,7 +15,7 @@ Steering_Control::~Steering_Control()
 {
 }
 
-bool Steering_Control::collision(double angle, double radius)
+bool Steering_Control::collision(double angle, double radius, const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles, const bool forward)
 {
   return false;
 }
@@ -42,7 +42,7 @@ Direction Steering_Control::getBestSteering(Pose initPose, Pose finalPose)
   // Check all angles
   for (double ang = (-params.maxAngle); ang <= params.maxAngle; ang += deltaAngle)
   {
-    if (!collision(ang, this->length))
+    if (true)//!collision(ang, this->length))
     {
       nextPoseForward = initPose;
       nextPoseBackward = initPose;
@@ -83,7 +83,8 @@ Direction Steering_Control::getBestSteeringWithObstacleDetection(Pose initPose, 
   bestSteering.angle = 0.0;
   bestSteering.sense = 0;
   double newDistance = 0.0;
-  double minDistance = calculateMahalanobisDistance(initPose, finalPose);
+  double currentDistance = calculateMahalanobisDistance(initPose, finalPose);
+  double minDistance = 100000.0; // out ot range distance
   Pose nextPoseBackward = initPose;
   Pose nextPoseForward = initPose;
   Pose bestPose = initPose;
@@ -92,15 +93,14 @@ Direction Steering_Control::getBestSteeringWithObstacleDetection(Pose initPose, 
   // Check all angles
   for (double ang = (-params.maxAngle); ang <= params.maxAngle; ang += deltaAngle)
   {
-    if (!collision(ang, this->length))
+    // Check the best pose forward
+    bool forward = true;
+    if (!collision(ang, this->length, obstacles, forward))
     {
       nextPoseForward = initPose;
-      nextPoseBackward = initPose;
       for (double i = (this->deltaTime * this->velocity); i <= length; i += (this->deltaTime * this->velocity))
       {
         nextPoseForward = getNextPose(nextPoseForward, ang, 1);
-        nextPoseBackward = getNextPose(nextPoseBackward, ang, -1);
-        // Check the best pose forward
         newDistance = calculateMahalanobisDistance(nextPoseForward, finalPose);
         if (newDistance < minDistance)
         {
@@ -109,7 +109,17 @@ Direction Steering_Control::getBestSteeringWithObstacleDetection(Pose initPose, 
           bestPose = nextPoseForward;
           minDistance = newDistance;
         }
-        // Check the best pose backward
+      }
+    }
+
+    // Check the best pose backward
+    forward = false;
+    if (!collision(ang, this->length, obstacles, forward))
+    {
+      nextPoseBackward = initPose;
+      for (double i = (this->deltaTime * this->velocity); i <= length; i += (this->deltaTime * this->velocity))
+      {
+        nextPoseBackward = getNextPose(nextPoseBackward, ang, -1);
         newDistance = calculateMahalanobisDistance(nextPoseBackward, finalPose);
         if (newDistance < minDistance)
         {
@@ -122,6 +132,7 @@ Direction Steering_Control::getBestSteeringWithObstacleDetection(Pose initPose, 
     }
   }
 
+  //TODO: Local minima check and correction!
   return bestSteering;
 }
 
