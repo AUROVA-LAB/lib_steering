@@ -78,8 +78,7 @@ void Steering_Control::filterPointsByTurningRadius(const pcl::PointCloud<pcl::Po
   }
 }
 
-bool Steering_Control::collision(double angle, double radius, const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles,
-                                 const bool forward)
+bool Steering_Control::collision(double angle, const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles, const bool forward)
 {
   //TODO: Extract as parameters! using blue values!
   const float WHEELBASE_METERS = 1.05;
@@ -167,57 +166,72 @@ Direction Steering_Control::getBestSteeringWithObstacleDetection(Pose initPose, 
 {
   // Initialize values
   Direction bestSteering;
-  bestSteering.angle = 0.0;
-  bestSteering.sense = 0;
-  double newDistance = 0.0;
-  double currentDistance = calculateMahalanobisDistance(initPose, finalPose);
-  double minDistance = 100000.0; // out ot range distance
-  Pose nextPoseBackward = initPose;
-  Pose nextPoseForward = initPose;
-  Pose bestPose = initPose;
   this->actualAngle = initPose.coordinates[3];
 
-  // Check all angles
-  for (double ang = (-params.maxAngle); ang <= params.maxAngle; ang += deltaAngle)
+  bool local_minima;
+  do // the idea is to do this loop only once if the vehicle is not in a local minima, and make it twice otherwise
+     // in the first iteration we detect the local minima, then add the initPose as local minima and recompute
+     // mahalanobis distances
   {
-    // Check the best pose forward
-    bool forward = true;
-    if (!collision(ang, this->length, obstacles, forward))
+    double currentDistance = calculateMahalanobisDistanceWithLocalMinima(initPose, finalPose);
+    double minDistance = 100000.0; // out ot range distance
+    double newDistance = 0.0;
+
+    bestSteering.angle = 0.0;
+    bestSteering.sense = 0;
+
+    Pose nextPoseBackward = initPose;
+    Pose nextPoseForward = initPose;
+    Pose bestPose = initPose;
+    local_minima = false;
+    // Check all angles
+    for (double ang = (-params.maxAngle); ang <= params.maxAngle; ang += deltaAngle)
     {
-      nextPoseForward = initPose;
-      for (double i = (this->deltaTime * this->velocity); i <= length; i += (this->deltaTime * this->velocity))
+      // Check the best pose forward
+      bool forward = true;
+      if (!collision(ang, obstacles, forward))
       {
-        nextPoseForward = getNextPose(nextPoseForward, ang, 1);
-        newDistance = calculateMahalanobisDistance(nextPoseForward, finalPose);
-        if (newDistance < minDistance)
+        nextPoseForward = initPose;
+        for (double i = (this->deltaTime * this->velocity); i <= length; i += (this->deltaTime * this->velocity))
         {
-          bestSteering.angle = ang;
-          bestSteering.sense = 1;
-          bestPose = nextPoseForward;
-          minDistance = newDistance;
+          nextPoseForward = getNextPose(nextPoseForward, ang, 1);
+          newDistance = calculateMahalanobisDistanceWithLocalMinima(nextPoseForward, finalPose);
+          if (newDistance < minDistance)
+          {
+            bestSteering.angle = ang;
+            bestSteering.sense = 1;
+            bestPose = nextPoseForward;
+            minDistance = newDistance;
+          }
+        }
+      }
+
+      // Check the best pose backward
+      forward = false;
+      if (!collision(ang, obstacles, forward))
+      {
+        nextPoseBackward = initPose;
+        for (double i = (this->deltaTime * this->velocity); i <= length; i += (this->deltaTime * this->velocity))
+        {
+          nextPoseBackward = getNextPose(nextPoseBackward, ang, -1);
+          newDistance = calculateMahalanobisDistanceWithLocalMinima(nextPoseBackward, finalPose);
+          if (newDistance < minDistance)
+          {
+            bestSteering.angle = ang;
+            bestSteering.sense = -1;
+            bestPose = nextPoseBackward;
+            minDistance = newDistance;
+          }
         }
       }
     }
-
-    // Check the best pose backward
-    forward = false;
-    if (!collision(ang, this->length, obstacles, forward))
+    if (minDistance >= currentDistance)
     {
-      nextPoseBackward = initPose;
-      for (double i = (this->deltaTime * this->velocity); i <= length; i += (this->deltaTime * this->velocity))
-      {
-        nextPoseBackward = getNextPose(nextPoseBackward, ang, -1);
-        newDistance = calculateMahalanobisDistance(nextPoseBackward, finalPose);
-        if (newDistance < minDistance)
-        {
-          bestSteering.angle = ang;
-          bestSteering.sense = -1;
-          bestPose = nextPoseBackward;
-          minDistance = newDistance;
-        }
-      }
+      local_minima = true;
+      this->local_minima_vector.push_back(initPose);
     }
   }
+  while (local_minima);
 
   //TODO: Local minima check and correction!
   return bestSteering;
@@ -282,5 +296,27 @@ double Steering_Control::calculateMahalanobisDistance(Pose p1, Pose p2)
   double mahalanobisDistance = sqrt(aux);
 
   return mahalanobisDistance;
+}
+
+double Steering_Control::calculateMahalanobisDistanceWithLocalMinima(Pose p1, Pose p2)
+{
+  double total_mahalanobis_distance = 0.0;
+
+  total_mahalanobis_distance += calculateMahalanobisDistance(p1, p2);
+
+  for(int i = 0; i < local_minima_vector.size(); i++)
+  {
+    double distance_to_local_minima = calculateMahalanobisDistance(p1, local_minima_vector[i]);
+    //TODO: Extract as parameter!
+    const double MAHAB_DISTANCE_THRESHOLD_TO_IGNORE_LOCAL_MINIMA = 3.0;
+    if(distance_to_local_minima < MAHAB_DISTANCE_THRESHOLD_TO_IGNORE_LOCAL_MINIMA)
+    {
+      double penalty = (MAHAB_DISTANCE_THRESHOLD_TO_IGNORE_LOCAL_MINIMA / (0.001 + distance_to_local_minima)) - 1.0;
+      if(penalty > 0)
+        total_mahalanobis_distance += penalty;
+    }
+  }
+
+  return (total_mahalanobis_distance);
 }
 

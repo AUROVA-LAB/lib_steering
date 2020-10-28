@@ -44,6 +44,8 @@ private:
   double deltaTime;
   double deltaAngle;
 
+  std::vector<Pose> local_minima_vector;
+
   void filterPointsStraightLine(const pcl::PointCloud<pcl::PointXYZI>::Ptr input, const bool forward,
                                 float vehicle_width, pcl::PointCloud<pcl::PointXYZI>& output);
 
@@ -52,7 +54,9 @@ private:
                                    const float x_axis_distance_from_base_link_to_velodyne,
                                    pcl::PointCloud<pcl::PointXYZI>& output);
 
-  bool collision(double angle, double radius, const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles, const bool forward);
+  bool collision(double angle, const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles, const bool forward);
+
+  double calculateMahalanobisDistanceWithLocalMinima(Pose p1, Pose p2);
 
 public:
   Steering_Control(RobotParams robot, double length, double deltaTime, double deltaAngle, double velocity);
