@@ -15,9 +15,96 @@ Steering_Control::~Steering_Control()
 {
 }
 
-bool Steering_Control::collision(double angle, double radius, const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles, const bool forward)
+void Steering_Control::filterPointsStraightLine(const pcl::PointCloud<pcl::PointXYZI>::Ptr input, const bool forward,
+                                                const float vehicle_width, pcl::PointCloud<pcl::PointXYZI>& output)
 {
-  return false;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr aux(new pcl::PointCloud<pcl::PointXYZI>);
+  pcl::PassThrough < pcl::PointXYZI > pass;
+  pass.setInputCloud(input);
+  pass.setFilterFieldName("y");
+  pass.setFilterLimits(-1 * vehicle_width / 2.0, vehicle_width / 2.0);
+  pass.filter(*aux);
+
+  pass.setInputCloud(aux);
+  pass.setFilterFieldName("x");
+  const float OUT_OF_RANGE = 1000.0;
+  if (forward)
+    pass.setFilterLimits(0.0, OUT_OF_RANGE);
+  else
+    pass.setFilterLimits(-1 * OUT_OF_RANGE, 0.0);
+
+  pass.filter(output);
+}
+
+void Steering_Control::filterPointsByTurningRadius(const pcl::PointCloud<pcl::PointXYZI>::Ptr input, const bool forward,
+                                                   const float steering_angle, const float wheelbase,
+                                                   const float vehicle_width,
+                                                   const float x_axis_distance_from_base_link_to_velodyne,
+                                                   pcl::PointCloud<pcl::PointXYZI>& output)
+{
+  float turn_center_x_coordinate = -x_axis_distance_from_base_link_to_velodyne;
+  float turn_center_y_coordinate = 0.0;
+  float steering_angle_radians = steering_angle * M_PI / 180.0;
+
+  turn_center_y_coordinate = wheelbase / tan(steering_angle_radians);
+
+  std::cout << "turning radius = " << turn_center_y_coordinate << std::endl;
+
+  float x = 0.0;
+  float y = 0.0;
+  float distance;
+
+  for (size_t i = 0; i < input->points.size(); ++i)
+  {
+    x = input->points[i].x;
+    if ((forward && x > 0.0) || (!forward && x <= 0.0))
+    {
+      y = input->points[i].y;
+
+      distance = sqrt(
+          (x - turn_center_x_coordinate) * (x - turn_center_x_coordinate)
+              + (y - turn_center_y_coordinate) * (y - turn_center_y_coordinate));
+
+      if (distance < fabs(turn_center_y_coordinate) + vehicle_width / 2.0
+          && distance > fabs(turn_center_y_coordinate) - vehicle_width / 2.0)
+      {
+        pcl::PointXYZI point;
+        point.x = x;
+        point.y = y;
+        point.z = input->points[i].z;
+        output.points.push_back(point);
+      }
+    }
+  }
+}
+
+bool Steering_Control::collision(double angle, double radius, const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles,
+                                 const bool forward)
+{
+  //TODO: Extract as parameters! using blue values!
+  const float WHEELBASE_METERS = 1.05;
+  const float X_DISTANCE_FROM_BASE_LINK_TO_SENSOR = 0.550;
+  const float VEHICLE_WIDTH = 0.80;
+  const float SAFETY_MARGIN = 0.15;
+  float safety_width = VEHICLE_WIDTH + 2.0 * SAFETY_MARGIN;
+
+  pcl::PointCloud < pcl::PointXYZI > obstacles_filtered;
+
+  if (fabs(angle) < 1.0) // if the steering is close to zero, the center is at infinity, so we assume straight line
+  {
+    this->filterPointsStraightLine(obstacles, forward, safety_width, obstacles_filtered);
+  }
+  else
+  {
+    this->filterPointsByTurningRadius(obstacles, forward, angle, WHEELBASE_METERS, safety_width,
+                                      X_DISTANCE_FROM_BASE_LINK_TO_SENSOR, obstacles_filtered);
+  }
+
+  bool collision = false;
+  if (obstacles_filtered.points.size() > 0)
+    collision = true;
+
+  return (collision);
 }
 
 void Steering_Control::printPosition(Pose p, string s)
@@ -42,7 +129,7 @@ Direction Steering_Control::getBestSteering(Pose initPose, Pose finalPose)
   // Check all angles
   for (double ang = (-params.maxAngle); ang <= params.maxAngle; ang += deltaAngle)
   {
-    if (true)//!collision(ang, this->length))
+    if (true) //!collision(ang, this->length))
     {
       nextPoseForward = initPose;
       nextPoseBackward = initPose;
