@@ -173,6 +173,7 @@ Direction Steering_Control::getBestSteeringWithObstacleDetection(Pose initPose, 
      // in the first iteration we detect the local minima, then add the initPose as local minima and recompute
      // mahalanobis distances
   {
+    //std::cout << "computing current mahalanobis distance!" << std::endl;
     double currentDistance = calculateMahalanobisDistanceWithLocalMinima(initPose, finalPose);
     double minDistance = 100000.0; // out ot range distance
     double newDistance = 0.0;
@@ -185,10 +186,12 @@ Direction Steering_Control::getBestSteeringWithObstacleDetection(Pose initPose, 
     Pose bestPose = initPose;
     local_minima = false;
     // Check all angles
+    //std::cout << "Checking all angles!" << std::endl;
     for (double ang = (-params.maxAngle); ang <= params.maxAngle; ang += deltaAngle)
     {
       // Check the best pose forward
       bool forward = true;
+      //std::cout << "Checking for forward collision!" << std::endl;
       if (!collision(ang, obstacles, forward))
       {
         nextPoseForward = initPose;
@@ -207,6 +210,7 @@ Direction Steering_Control::getBestSteeringWithObstacleDetection(Pose initPose, 
       }
 
       // Check the best pose backward
+      //std::cout << "Checking for backward collision!" << std::endl;
       forward = false;
       if (!collision(ang, obstacles, forward))
       {
@@ -225,15 +229,17 @@ Direction Steering_Control::getBestSteeringWithObstacleDetection(Pose initPose, 
         }
       }
     }
+    //std::cout << "Checking local minima!" << std::endl;
     if (minDistance >= currentDistance)
     {
+      //std::cout << "Local minima found!" << std::endl;
       local_minima = true;
       this->local_minima_vector.push_back(initPose);
     }
   }
   while (local_minima);
 
-  //TODO: Local minima check and correction!
+  //std::cout << "Returning best steering!" << std::endl;
   return bestSteering;
 }
 
