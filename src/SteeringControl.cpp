@@ -9,6 +9,8 @@ Steering_Control::Steering_Control(RobotParams robot, double length, double delt
   this->deltaAngle = deltaAngle;
   this->velocity = velocity;
   this->actualAngle = 0;
+
+  this->first_iteration = true;
 }
 
 Steering_Control::~Steering_Control()
@@ -126,10 +128,29 @@ Direction Steering_Control::getBestSteeringWithObstacleDetection(Pose initPose, 
       << finalPose.matrix[0][0] << ", " << finalPose.matrix[1][1] << ", " << finalPose.matrix[2][2] << ", "
       << finalPose.matrix[3][3] << std::endl;
 */
+/*
+  static Pose previous_final_pose;
+
+  if(first_iteration)
+  {
+    previous_final_pose = finalPose;
+    first_iteration = false;
+  }
+
+  double distance_between_current_and_previous_goals = calculateMahalanobisDistance(finalPose, previous_final_pose);
+  if(distance_between_current_and_previous_goals > 3.0)
+  {
+    std::cout << "Goal change detected! clearing previous local minima information!" << std::endl;
+    std::cout << "distance_between_current_and_previous_goals = " << distance_between_current_and_previous_goals << std::endl;
+    local_minima_vector.clear();
+    previous_final_pose = finalPose;
+    //std::getchar();
+  }
+*/
   // Initialize values
   Direction bestSteering;
   this->actualAngle = initPose.coordinates[3];
-  std::cout << "actualAngle = " << actualAngle << std::endl;
+  //std::cout << "actualAngle = " << actualAngle << std::endl;
 
   bool local_minima;
   do // the idea is to do this loop only once if the vehicle is not in a local minima, and make it twice otherwise

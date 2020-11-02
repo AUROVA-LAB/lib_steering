@@ -44,6 +44,8 @@ private:
   double deltaTime;
   double deltaAngle;
 
+  bool first_iteration;
+
   std::vector<Pose> local_minima_vector;
 
   void filterPointsStraightLine(const pcl::PointCloud<pcl::PointXYZI>::Ptr input, const bool forward,
