@@ -64,8 +64,7 @@ public:
 
   void printPosition(Pose p, string s);
   double calculateMahalanobisDistance(Pose p1, Pose p2);
-  Pose getNextPose(Pose initPose, double angle, int sense);
-  Direction getBestSteering(Pose initPose, Pose finalPose);
+  Pose getNextPose(Pose initPose, double angle, double distance_traveled, int sense);
   Direction getBestSteeringWithObstacleDetection(Pose initPose, Pose finalPose,
                                                  const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles);
 };

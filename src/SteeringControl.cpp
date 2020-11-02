@@ -48,7 +48,7 @@ void Steering_Control::filterPointsByTurningRadius(const pcl::PointCloud<pcl::Po
 
   turn_center_y_coordinate = wheelbase / tan(steering_angle_radians);
 
-  std::cout << "turning radius = " << turn_center_y_coordinate << std::endl;
+  //std::cout << "turning radius = " << turn_center_y_coordinate << std::endl;
 
   float x = 0.0;
   float y = 0.0;
@@ -112,61 +112,24 @@ void Steering_Control::printPosition(Pose p, string s)
       << "," << p.coordinates[3] << ")" << endl;
 }
 
-Direction Steering_Control::getBestSteering(Pose initPose, Pose finalPose)
-{
-  // Initialize values
-  Direction bestSteering;
-  bestSteering.angle = 0.0;
-  bestSteering.sense = 0;
-  double newDistance = 0.0;
-  double minDistance = calculateMahalanobisDistance(initPose, finalPose);
-  Pose nextPoseBackward = initPose;
-  Pose nextPoseForward = initPose;
-  Pose bestPose = initPose;
-  this->actualAngle = initPose.coordinates[3];
-
-  // Check all angles
-  for (double ang = (-params.maxAngle); ang <= params.maxAngle; ang += deltaAngle)
-  {
-    if (true) //!collision(ang, this->length))
-    {
-      nextPoseForward = initPose;
-      nextPoseBackward = initPose;
-      for (double i = (this->deltaTime * this->velocity); i <= length; i += (this->deltaTime * this->velocity))
-      {
-        nextPoseForward = getNextPose(nextPoseForward, ang, 1);
-        nextPoseBackward = getNextPose(nextPoseBackward, ang, -1);
-        // Check the best pose forward
-        newDistance = calculateMahalanobisDistance(nextPoseForward, finalPose);
-        if (newDistance < minDistance)
-        {
-          bestSteering.angle = ang;
-          bestSteering.sense = 1;
-          bestPose = nextPoseForward;
-          minDistance = newDistance;
-        }
-        // Check the best pose backward
-        newDistance = calculateMahalanobisDistance(nextPoseBackward, finalPose);
-        if (newDistance < minDistance)
-        {
-          bestSteering.angle = ang;
-          bestSteering.sense = -1;
-          bestPose = nextPoseBackward;
-          minDistance = newDistance;
-        }
-      }
-    }
-  }
-
-  return bestSteering;
-}
-
 Direction Steering_Control::getBestSteeringWithObstacleDetection(Pose initPose, Pose finalPose,
                                                                  const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles)
 {
+/*
+  std::cout << " initPose coordinates x, y, z, theta = " << initPose.coordinates[0] << ", " << initPose.coordinates[1]
+      << ", " << initPose.coordinates[2] << ", " << initPose.coordinates[3] << "    variances x, y, z, theta = "
+      << initPose.matrix[0][0] << ", " << initPose.matrix[1][1] << ", " << initPose.matrix[2][2] << ", "
+      << initPose.matrix[3][3] << std::endl << std::endl;
+
+  std::cout << " finalPose coordinates = " << finalPose.coordinates[0] << ", " << finalPose.coordinates[1] << ", "
+      << finalPose.coordinates[2] << ", " << finalPose.coordinates[3] << "    variances x, y, z, theta = "
+      << finalPose.matrix[0][0] << ", " << finalPose.matrix[1][1] << ", " << finalPose.matrix[2][2] << ", "
+      << finalPose.matrix[3][3] << std::endl;
+*/
   // Initialize values
   Direction bestSteering;
   this->actualAngle = initPose.coordinates[3];
+  std::cout << "actualAngle = " << actualAngle << std::endl;
 
   bool local_minima;
   do // the idea is to do this loop only once if the vehicle is not in a local minima, and make it twice otherwise
@@ -175,7 +138,9 @@ Direction Steering_Control::getBestSteeringWithObstacleDetection(Pose initPose, 
   {
     //std::cout << "computing current mahalanobis distance!" << std::endl;
     double currentDistance = calculateMahalanobisDistanceWithLocalMinima(initPose, finalPose);
-    double minDistance = 100000.0; // out ot range distance
+    //std::cout << "currentDistance = " << currentDistance << std::endl;
+
+    double minDistance = 100000000.0; // out ot range distance
     double newDistance = 0.0;
 
     bestSteering.angle = 0.0;
@@ -189,16 +154,29 @@ Direction Steering_Control::getBestSteeringWithObstacleDetection(Pose initPose, 
     //std::cout << "Checking all angles!" << std::endl;
     for (double ang = (-params.maxAngle); ang <= params.maxAngle; ang += deltaAngle)
     {
+      //std::cout << "ang = " << ang << std::endl;
       // Check the best pose forward
       bool forward = true;
       //std::cout << "Checking for forward collision!" << std::endl;
       if (!collision(ang, obstacles, forward))
       {
         nextPoseForward = initPose;
-        for (double i = (this->deltaTime * this->velocity); i <= length; i += (this->deltaTime * this->velocity))
+        for (double distance_traveled = (this->deltaTime * this->velocity); distance_traveled <= length; distance_traveled += (this->deltaTime * this->velocity))
         {
-          nextPoseForward = getNextPose(nextPoseForward, ang, 1);
+          nextPoseForward = getNextPose(nextPoseForward, ang, distance_traveled, 1);
+/*
+          std::cout << " nextPoseForward coordinates x, y, z, theta = " << nextPoseForward.coordinates[0] << ", "
+              << nextPoseForward.coordinates[1] << ", " << nextPoseForward.coordinates[2] << ", "
+              << nextPoseForward.coordinates[3] << "    variances x, y, z, theta = " << nextPoseForward.matrix[0][0]
+              << ", " << nextPoseForward.matrix[1][1] << ", " << nextPoseForward.matrix[2][2] << ", "
+              << nextPoseForward.matrix[3][3] << std::endl << std::endl;
+*/
           newDistance = calculateMahalanobisDistanceWithLocalMinima(nextPoseForward, finalPose);
+
+          //std::cout << "newDistance = " << newDistance << std::endl;
+
+          //std::getchar();
+
           if (newDistance < minDistance)
           {
             bestSteering.angle = ang;
@@ -208,6 +186,11 @@ Direction Steering_Control::getBestSteeringWithObstacleDetection(Pose initPose, 
           }
         }
       }
+      else
+      {
+        //std::cout << "Forward collision detected! steering = " << ang << std::endl;
+        //std::getchar();
+      }
 
       // Check the best pose backward
       //std::cout << "Checking for backward collision!" << std::endl;
@@ -215,9 +198,9 @@ Direction Steering_Control::getBestSteeringWithObstacleDetection(Pose initPose, 
       if (!collision(ang, obstacles, forward))
       {
         nextPoseBackward = initPose;
-        for (double i = (this->deltaTime * this->velocity); i <= length; i += (this->deltaTime * this->velocity))
+        for (double distance_traveled = (this->deltaTime * this->velocity); distance_traveled <= length; distance_traveled += (this->deltaTime * this->velocity))
         {
-          nextPoseBackward = getNextPose(nextPoseBackward, ang, -1);
+          nextPoseBackward = getNextPose(nextPoseBackward, ang, distance_traveled, -1);
           newDistance = calculateMahalanobisDistanceWithLocalMinima(nextPoseBackward, finalPose);
           if (newDistance < minDistance)
           {
@@ -228,42 +211,57 @@ Direction Steering_Control::getBestSteeringWithObstacleDetection(Pose initPose, 
           }
         }
       }
+      else
+      {
+        //std::cout << "Backward collision detected! steering = " << ang << std::endl;
+        //std::getchar();
+      }
     }
+
+    std::cout << "bestSteering.angle = " << bestSteering.angle << std::endl;
+    //std::cout << "bestSteering.sense = " << bestSteering.sense << std::endl;
+    //std::cout << "minDistance = " << minDistance << std::endl;
+    //std::getchar();
+
     //std::cout << "Checking local minima!" << std::endl;
     if (minDistance >= currentDistance)
     {
-      //std::cout << "Local minima found!" << std::endl;
+      std::cout << "Local minima found!" << std::endl;
+      //getchar();
       local_minima = true;
       this->local_minima_vector.push_back(initPose);
     }
-  }
-  while (local_minima);
+  } while (local_minima);
 
   //std::cout << "Returning best steering!" << std::endl;
   return bestSteering;
 }
 
-Pose Steering_Control::getNextPose(Pose initPose, double angle, int sense)
+Pose Steering_Control::getNextPose(Pose initPose, double angle, double distance_traveled, int sense)
 {
   Pose nextPose = initPose;
 
   // Calculate with radians
-  double range = velocity * deltaTime;
-  double radians = angle * (M_PI / 180);
-  double deltaSteering = (range / params.l) * sin(radians);
+  double steering_radians = angle * (M_PI / 180.0);
 
-  double degrees = (deltaSteering * 180) / M_PI;
+  if (fabs(steering_radians) < 0.001 * M_PI / 180.0) // to avoid infinite radius
+    steering_radians = 0.001 * M_PI / 180.0;
 
+  double r = params.l / tan(steering_radians);
+  double deltaBeta = distance_traveled * (double)sense / fabs(r);
+  double deltaTheta = deltaBeta;
+  if(steering_radians < 0.0)
+    deltaTheta = deltaTheta * -1.0;
+
+  double deltaThetaDegrees = (deltaTheta * 180.0) / M_PI;
   // Saved in degrees
-  nextPose.coordinates[3] += degrees;
+  nextPose.coordinates[3] = deltaThetaDegrees;
 
-  double radiansSteering = nextPose.coordinates[3] * (M_PI / 180);
+  double deltaX = fabs(r) * sin(deltaBeta);
+  double deltaY = r * (1.0 - cos(deltaBeta));
 
-  double deltaX = range * cos(radiansSteering) * cos(radians);
-  double deltaY = range * sin(radiansSteering) * cos(radians);
-
-  nextPose.coordinates[0] += deltaX * sense;
-  nextPose.coordinates[1] += deltaY * sense;
+  nextPose.coordinates[0] = deltaX;
+  nextPose.coordinates[1] = deltaY;
 
   return nextPose;
 }
@@ -310,15 +308,15 @@ double Steering_Control::calculateMahalanobisDistanceWithLocalMinima(Pose p1, Po
 
   total_mahalanobis_distance += calculateMahalanobisDistance(p1, p2);
 
-  for(int i = 0; i < local_minima_vector.size(); i++)
+  for (int i = 0; i < local_minima_vector.size(); i++)
   {
     double distance_to_local_minima = calculateMahalanobisDistance(p1, local_minima_vector[i]);
     //TODO: Extract as parameter!
     const double MAHAB_DISTANCE_THRESHOLD_TO_IGNORE_LOCAL_MINIMA = 3.0;
-    if(distance_to_local_minima < MAHAB_DISTANCE_THRESHOLD_TO_IGNORE_LOCAL_MINIMA)
+    if (distance_to_local_minima < MAHAB_DISTANCE_THRESHOLD_TO_IGNORE_LOCAL_MINIMA)
     {
       double penalty = (MAHAB_DISTANCE_THRESHOLD_TO_IGNORE_LOCAL_MINIMA / (0.001 + distance_to_local_minima)) - 1.0;
-      if(penalty > 0)
+      if (penalty > 0)
         total_mahalanobis_distance += penalty;
     }
   }
