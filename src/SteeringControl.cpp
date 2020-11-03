@@ -110,36 +110,37 @@ void SteeringControl::printPosition(const Pose p, const string s)
 Direction SteeringControl::getBestSteering(const Pose initPose, const Pose finalPose,
                                            const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles)
 {
-  /*
-   std::cout << " initPose coordinates x, y, z, theta = " << initPose.coordinates[0] << ", " << initPose.coordinates[1]
-   << ", " << initPose.coordinates[2] << ", " << initPose.coordinates[3] << "    variances x, y, z, theta = "
-   << initPose.matrix[0][0] << ", " << initPose.matrix[1][1] << ", " << initPose.matrix[2][2] << ", "
-   << initPose.matrix[3][3] << std::endl << std::endl;
+/*
+  std::cout << " initPose coordinates x, y, z, theta = " << initPose.coordinates[0] << ", " << initPose.coordinates[1]
+      << ", " << initPose.coordinates[2] << ", " << initPose.coordinates[3] << "    variances x, y, z, theta = "
+      << initPose.matrix[0][0] << ", " << initPose.matrix[1][1] << ", " << initPose.matrix[2][2] << ", "
+      << initPose.matrix[3][3] << std::endl << std::endl;
 
-   std::cout << " finalPose coordinates = " << finalPose.coordinates[0] << ", " << finalPose.coordinates[1] << ", "
-   << finalPose.coordinates[2] << ", " << finalPose.coordinates[3] << "    variances x, y, z, theta = "
-   << finalPose.matrix[0][0] << ", " << finalPose.matrix[1][1] << ", " << finalPose.matrix[2][2] << ", "
-   << finalPose.matrix[3][3] << std::endl;
-   */
-  /*
-   static Pose previous_final_pose;
+  std::cout << " finalPose coordinates = " << finalPose.coordinates[0] << ", " << finalPose.coordinates[1] << ", "
+      << finalPose.coordinates[2] << ", " << finalPose.coordinates[3] << "    variances x, y, z, theta = "
+      << finalPose.matrix[0][0] << ", " << finalPose.matrix[1][1] << ", " << finalPose.matrix[2][2] << ", "
+      << finalPose.matrix[3][3] << std::endl << std::endl;
+*/
+  static Pose previous_final_pose;
 
-   if(first_iteration)
-   {
-   previous_final_pose = finalPose;
-   first_iteration = false;
-   }
+  if (first_iteration_)
+  {
+    previous_final_pose = finalPose;
+    first_iteration_ = false;
+  }
 
-   double distance_between_current_and_previous_goals = calculateMahalanobisDistance(finalPose, previous_final_pose);
-   if(distance_between_current_and_previous_goals > 3.0)
-   {
-   std::cout << "Goal change detected! clearing previous local minima information!" << std::endl;
-   std::cout << "distance_between_current_and_previous_goals = " << distance_between_current_and_previous_goals << std::endl;
-   local_minima_vector_.clear();
-   previous_final_pose = finalPose;
-   //std::getchar();
-   }
-   */
+  double distance_between_current_and_previous_goals = calculateMahalanobisDistance(finalPose, previous_final_pose);
+  //std::cout << "distance_between_current_and_previous_goals = " << distance_between_current_and_previous_goals << std::endl;
+  if (distance_between_current_and_previous_goals > 3.0)
+  {
+    std::cout << "Goal change detected! clearing previous local minima information!" << std::endl;
+    std::cout << "distance_between_current_and_previous_goals = " << distance_between_current_and_previous_goals
+        << std::endl;
+    local_minima_vector_.clear();
+    previous_final_pose = finalPose;
+    //std::getchar();
+  }
+
   // Initialize values
   Direction bestSteering;
 
@@ -150,7 +151,7 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
   {
     //std::cout << "computing current mahalanobis distance!" << std::endl;
     double currentDistance = calculateMahalanobisDistanceWithLocalMinima(initPose, finalPose);
-    //std::cout << "currentDistance = " << currentDistance << std::endl;
+    std::cout << "currentDistance = " << currentDistance << std::endl;
 
     double minDistance = 100000000.0; // out ot range distance
     double newDistance = 0.0;
@@ -174,23 +175,27 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
       //std::cout << "Checking for forward collision!" << std::endl;
       if (!collision(steering_angle_deg, obstacles, forward))
       {
+        //std::cout << "Forward: predicting costs at steering_angle_deg = " << steering_angle_deg << std::endl;
         nextPoseForward = initPose;
         float delta_distance = ackerman_prediction_params_.delta_time * robot_params_.max_speed_meters_per_second;
-        float trajectory_length = robot_params_.max_speed_meters_per_second * ackerman_prediction_params_.temporal_horizon;
+        float trajectory_length = robot_params_.max_speed_meters_per_second
+            * ackerman_prediction_params_.temporal_horizon;
 
-        for (float distance_traveled = delta_distance; distance_traveled <= trajectory_length; distance_traveled += delta_distance)
+        for (float distance_traveled = delta_distance; distance_traveled <= trajectory_length; distance_traveled +=
+            delta_distance)
         {
-          nextPoseForward = getNextPose(nextPoseForward, steering_angle_deg, distance_traveled, 1);
-          /*
+          nextPoseForward = getNextPose(initPose, steering_angle_deg, distance_traveled, 1);
+/*
            std::cout << " nextPoseForward coordinates x, y, z, theta = " << nextPoseForward.coordinates[0] << ", "
            << nextPoseForward.coordinates[1] << ", " << nextPoseForward.coordinates[2] << ", "
            << nextPoseForward.coordinates[3] << "    variances x, y, z, theta = " << nextPoseForward.matrix[0][0]
            << ", " << nextPoseForward.matrix[1][1] << ", " << nextPoseForward.matrix[2][2] << ", "
            << nextPoseForward.matrix[3][3] << std::endl << std::endl;
-           */
+*/
           newDistance = calculateMahalanobisDistanceWithLocalMinima(nextPoseForward, finalPose);
 
-          //std::cout << "newDistance = " << newDistance << std::endl;
+
+          //std::cout << "distance_traveled = " << distance_traveled << "    newMahalanobisDistance = " << newDistance << std::endl;
 
           //std::getchar();
 
@@ -209,19 +214,27 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
         //std::getchar();
       }
 
+      //std::getchar();
+
       // Check the best pose backward
       //std::cout << "Checking for backward collision!" << std::endl;
       forward = false;
       if (!collision(steering_angle_deg, obstacles, forward))
       {
+        //std::cout << "Backward: predicting costs at steering_angle_deg = " << steering_angle_deg << std::endl;
         nextPoseBackward = initPose;
         float delta_distance = ackerman_prediction_params_.delta_time * robot_params_.max_speed_meters_per_second;
-        float trajectory_length = robot_params_.max_speed_meters_per_second * ackerman_prediction_params_.temporal_horizon;
+        float trajectory_length = robot_params_.max_speed_meters_per_second
+            * ackerman_prediction_params_.temporal_horizon;
 
-        for (float distance_traveled = delta_distance; distance_traveled <= trajectory_length; distance_traveled += delta_distance)
+        for (float distance_traveled = delta_distance; distance_traveled <= trajectory_length; distance_traveled +=
+            delta_distance)
         {
-          nextPoseBackward = getNextPose(nextPoseBackward, steering_angle_deg, distance_traveled, -1);
+          nextPoseBackward = getNextPose(initPose, steering_angle_deg, distance_traveled, -1);
           newDistance = calculateMahalanobisDistanceWithLocalMinima(nextPoseBackward, finalPose);
+
+          //std::cout << "distance_traveled = " << distance_traveled << "    newMahalanobisDistance = " << newDistance << std::endl;
+
           if (newDistance < minDistance)
           {
             bestSteering.angle = steering_angle_deg;
@@ -238,9 +251,9 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
       }
     }
 
+    std::cout << "minDistance = " << minDistance << std::endl;
     std::cout << "bestSteering.angle = " << bestSteering.angle << std::endl;
-    //std::cout << "bestSteering.sense = " << bestSteering.sense << std::endl;
-    //std::cout << "minDistance = " << minDistance << std::endl;
+    std::cout << "bestSteering.sense = " << bestSteering.sense << std::endl;
     //std::getchar();
 
     //std::cout << "Checking local minima!" << std::endl;
@@ -260,7 +273,7 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
 Pose SteeringControl::getNextPose(const Pose initPose, const float steering_angle_deg, const float distance_traveled,
                                   const int sense)
 {
-  Pose nextPose = initPose;
+  Pose next_pose_in_baselink_frame = initPose;
 
   // Calculate with radians
   float steering_radians = steering_angle_deg * (M_PI / 180.0);
@@ -274,17 +287,30 @@ Pose SteeringControl::getNextPose(const Pose initPose, const float steering_angl
   if (steering_radians < 0.0)
     deltaTheta = deltaTheta * -1.0;
 
-  float deltaThetaDegrees = (deltaTheta * 180.0) / M_PI;
-  // Saved in degrees
-  nextPose.coordinates[3] = deltaThetaDegrees;
-
   float deltaX = fabs(r) * sin(deltaBeta);
   float deltaY = r * (1.0 - cos(deltaBeta));
 
-  nextPose.coordinates[0] = deltaX;
-  nextPose.coordinates[1] = deltaY;
+  Vector2f robot_pos_inc_in_baselink_frame;
+  robot_pos_inc_in_baselink_frame << deltaX, deltaY;
 
-  return nextPose;
+  float robot_init_yaw_rad = initPose.coordinates[3] * M_PI / 180.0;
+  Matrix2f robot_init_rot;
+  robot_init_rot << cos(robot_init_yaw_rad), -1.0*sin(robot_init_yaw_rad), sin(robot_init_yaw_rad), cos(robot_init_yaw_rad);
+
+  Vector2f robot_initial_trans;
+  robot_initial_trans << initPose.coordinates[0], initPose.coordinates[1];
+
+  Vector2f robot_final_trans;
+  robot_final_trans = robot_initial_trans + robot_init_rot * robot_pos_inc_in_baselink_frame;
+
+  next_pose_in_baselink_frame.coordinates[0] = robot_final_trans(0);
+  next_pose_in_baselink_frame.coordinates[1] = robot_final_trans(1);
+
+  float deltaThetaDegrees = (deltaTheta * 180.0) / M_PI;
+  // Saved in degrees
+  next_pose_in_baselink_frame.coordinates[3] += deltaThetaDegrees;
+
+  return next_pose_in_baselink_frame;
 }
 
 double SteeringControl::calculateMahalanobisDistance(const Pose p1, const Pose p2)
