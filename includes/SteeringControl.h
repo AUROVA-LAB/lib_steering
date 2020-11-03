@@ -17,7 +17,7 @@ using namespace Eigen;
 struct Direction
 {
   int sense;
-  double angle;
+  float angle;
 };
 
 struct Pose
@@ -28,47 +28,75 @@ struct Pose
 
 struct RobotParams
 {
-  double maxAngle;
-  double h;
-  double w;
-  double l;
+  float x_distance_from_velodyne_to_base_link;
+  float x_distance_from_velodyne_to_front;
+  float x_distance_from_velodyne_to_back;
+  float abs_max_steering_angle_deg;
+  float wheelbase;
+  float width;
+  float length;
+  float height;
+  float ground_z_coordinate_in_sensor_frame_origin;
+  float max_speed_meters_per_second;
 };
 
-class Steering_Control
+struct AckermannPredictionParams
+{
+  float temporal_horizon;
+  float delta_time;
+  float delta_steering;
+};
+
+struct AckermannControlParams
+{
+  float max_speed_meters_per_second;
+  float min_speed_meters_per_second;
+};
+
+struct CollisionAvoidanceParams
+{
+  float safety_lateral_margin;
+  float safety_above_margin;
+  float safety_longitudinal_margin;
+  float min_obstacle_height;
+};
+
+class SteeringControl
 {
 private:
-  RobotParams params;
-  double length;
-  double velocity;
-  double actualAngle;
-  double deltaTime;
-  double deltaAngle;
+  RobotParams robot_params_;
+  AckermannPredictionParams ackerman_prediction_params_;
+  AckermannControlParams ackermann_control_params_;
+  CollisionAvoidanceParams collision_avoidance_params_;
 
-  bool first_iteration;
+  bool first_iteration_;
 
-  std::vector<Pose> local_minima_vector;
+  std::vector<Pose> local_minima_vector_;
 
   void filterPointsStraightLine(const pcl::PointCloud<pcl::PointXYZI>::Ptr input, const bool forward,
-                                float vehicle_width, pcl::PointCloud<pcl::PointXYZI>& output);
+                                float safety_width, pcl::PointCloud<pcl::PointXYZI>& output);
 
   void filterPointsByTurningRadius(const pcl::PointCloud<pcl::PointXYZI>::Ptr input, const bool forward,
-                                   const float steering_angle, const float wheelbase, const float vehicle_width,
-                                   const float x_axis_distance_from_base_link_to_velodyne,
+                                   const float steering_angle_deg, const float safety_width,
                                    pcl::PointCloud<pcl::PointXYZI>& output);
 
-  bool collision(double angle, const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles, const bool forward);
+  bool collision(const float steering_angle_deg, const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles,
+                 const bool forward);
 
-  double calculateMahalanobisDistanceWithLocalMinima(Pose p1, Pose p2);
+  double calculateMahalanobisDistanceWithLocalMinima(const Pose p1, const Pose p2);
 
 public:
-  Steering_Control(RobotParams robot, double length, double deltaTime, double deltaAngle, double velocity);
-  ~Steering_Control();
+  SteeringControl(const RobotParams robot_params, const AckermannPredictionParams ackerman_prediction_params,
+                  const AckermannControlParams ackermann_control_params,
+                  const CollisionAvoidanceParams collision_avoidance_params);
+  ~SteeringControl();
 
-  void printPosition(Pose p, string s);
-  double calculateMahalanobisDistance(Pose p1, Pose p2);
-  Pose getNextPose(Pose initPose, double angle, double distance_traveled, int sense);
-  Direction getBestSteeringWithObstacleDetection(Pose initPose, Pose finalPose,
-                                                 const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles);
+  void printPosition(const Pose p, const string s);
+  double calculateMahalanobisDistance(const Pose p1, const Pose p2);
+  Pose getNextPose(const Pose initPose, const float steering_angle_deg, const float distance_traveled,
+                   const int sense);
+  Direction getBestSteering(const Pose initPose, const Pose finalPose,
+                            const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles);
 };
 
 #endif
