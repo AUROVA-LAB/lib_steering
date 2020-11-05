@@ -269,7 +269,7 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
 
     std::cout << "forward = " << forward << std::endl;
 
-    assert(!collision(bestSteering.angle, obstacles, forward));
+    //assert(!collision(bestSteering.angle, obstacles, forward));
 
     //std::cout << "Checking local minima!" << std::endl;
     if (minDistance >= currentDistance)
