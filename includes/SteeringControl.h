@@ -51,6 +51,7 @@ struct AckermannControlParams
 {
   float max_speed_meters_per_second;
   float min_speed_meters_per_second;
+  double mahalanobis_distance_threshold_to_ignore_local_minima;
 };
 
 struct CollisionAvoidanceParams

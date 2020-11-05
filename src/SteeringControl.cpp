@@ -110,17 +110,17 @@ void SteeringControl::printPosition(const Pose p, const string s)
 Direction SteeringControl::getBestSteering(const Pose initPose, const Pose finalPose,
                                            const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles)
 {
-/*
-  std::cout << " initPose coordinates x, y, z, theta = " << initPose.coordinates[0] << ", " << initPose.coordinates[1]
-      << ", " << initPose.coordinates[2] << ", " << initPose.coordinates[3] << "    variances x, y, z, theta = "
-      << initPose.matrix[0][0] << ", " << initPose.matrix[1][1] << ", " << initPose.matrix[2][2] << ", "
-      << initPose.matrix[3][3] << std::endl << std::endl;
+  /*
+   std::cout << " initPose coordinates x, y, z, theta = " << initPose.coordinates[0] << ", " << initPose.coordinates[1]
+   << ", " << initPose.coordinates[2] << ", " << initPose.coordinates[3] << "    variances x, y, z, theta = "
+   << initPose.matrix[0][0] << ", " << initPose.matrix[1][1] << ", " << initPose.matrix[2][2] << ", "
+   << initPose.matrix[3][3] << std::endl << std::endl;
 
-  std::cout << " finalPose coordinates = " << finalPose.coordinates[0] << ", " << finalPose.coordinates[1] << ", "
-      << finalPose.coordinates[2] << ", " << finalPose.coordinates[3] << "    variances x, y, z, theta = "
-      << finalPose.matrix[0][0] << ", " << finalPose.matrix[1][1] << ", " << finalPose.matrix[2][2] << ", "
-      << finalPose.matrix[3][3] << std::endl << std::endl;
-*/
+   std::cout << " finalPose coordinates = " << finalPose.coordinates[0] << ", " << finalPose.coordinates[1] << ", "
+   << finalPose.coordinates[2] << ", " << finalPose.coordinates[3] << "    variances x, y, z, theta = "
+   << finalPose.matrix[0][0] << ", " << finalPose.matrix[1][1] << ", " << finalPose.matrix[2][2] << ", "
+   << finalPose.matrix[3][3] << std::endl << std::endl;
+   */
   static Pose previous_final_pose;
 
   if (first_iteration_)
@@ -144,20 +144,28 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
   // Initialize values
   Direction bestSteering;
 
+  int do_while_iteration_number = 0;
   bool local_minima;
   do // the idea is to do this loop only once if the vehicle is not in a local minima, and make it twice otherwise
      // in the first iteration we detect the local minima, then add the initPose as local minima and recompute
      // mahalanobis distances
   {
+    do_while_iteration_number++;
+    std::cout << "do while iteration number = " << do_while_iteration_number << std::endl;
     //std::cout << "computing current mahalanobis distance!" << std::endl;
     double currentDistance = calculateMahalanobisDistanceWithLocalMinima(initPose, finalPose);
     std::cout << "currentDistance = " << currentDistance << std::endl;
+    std::cout << "currentEuclidean distance = "
+        << sqrt(
+            (initPose.coordinates[0] - finalPose.coordinates[0]) * (initPose.coordinates[0] - finalPose.coordinates[0])
+                + (initPose.coordinates[1] - finalPose.coordinates[1])
+                    * (initPose.coordinates[1] - finalPose.coordinates[1])) << std::endl;
 
     double minDistance = 100000000.0; // out ot range distance
     double newDistance = 0.0;
 
     bestSteering.angle = 0.0;
-    bestSteering.sense = 0;
+    bestSteering.sense = 0; //Sense of zero stops the vehicle
 
     Pose nextPoseBackward = initPose;
     Pose nextPoseForward = initPose;
@@ -185,15 +193,14 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
             delta_distance)
         {
           nextPoseForward = getNextPose(initPose, steering_angle_deg, distance_traveled, 1);
-/*
+          /*
            std::cout << " nextPoseForward coordinates x, y, z, theta = " << nextPoseForward.coordinates[0] << ", "
            << nextPoseForward.coordinates[1] << ", " << nextPoseForward.coordinates[2] << ", "
            << nextPoseForward.coordinates[3] << "    variances x, y, z, theta = " << nextPoseForward.matrix[0][0]
            << ", " << nextPoseForward.matrix[1][1] << ", " << nextPoseForward.matrix[2][2] << ", "
            << nextPoseForward.matrix[3][3] << std::endl << std::endl;
-*/
+           */
           newDistance = calculateMahalanobisDistanceWithLocalMinima(nextPoseForward, finalPose);
-
 
           //std::cout << "distance_traveled = " << distance_traveled << "    newMahalanobisDistance = " << newDistance << std::endl;
 
@@ -210,7 +217,7 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
       }
       else
       {
-        //std::cout << "Forward collision detected! steering = " <<steering_angle_deg<< std::endl;
+        //std::cout << "Forward collision detected! steering = " << steering_angle_deg << std::endl;
         //std::getchar();
       }
 
@@ -246,7 +253,7 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
       }
       else
       {
-        //std::cout << "Backward collision detected! steering = " <<steering_angle_deg<< std::endl;
+        //std::cout << "Backward collision detected! steering = " << steering_angle_deg << std::endl;
         //std::getchar();
       }
     }
@@ -255,6 +262,14 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
     std::cout << "bestSteering.angle = " << bestSteering.angle << std::endl;
     std::cout << "bestSteering.sense = " << bestSteering.sense << std::endl;
     //std::getchar();
+
+    bool forward = true;
+    if (bestSteering.sense == -1)
+      forward = false;
+
+    std::cout << "forward = " << forward << std::endl;
+
+    assert(!collision(bestSteering.angle, obstacles, forward));
 
     //std::cout << "Checking local minima!" << std::endl;
     if (minDistance >= currentDistance)
@@ -266,6 +281,7 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
     }
   } while (local_minima);
 
+  std::cout << "Total number of local minima = " << local_minima_vector_.size() << std::endl;
   //std::cout << "Returning best steering!" << std::endl;
   return bestSteering;
 }
@@ -295,7 +311,8 @@ Pose SteeringControl::getNextPose(const Pose initPose, const float steering_angl
 
   float robot_init_yaw_rad = initPose.coordinates[3] * M_PI / 180.0;
   Matrix2f robot_init_rot;
-  robot_init_rot << cos(robot_init_yaw_rad), -1.0*sin(robot_init_yaw_rad), sin(robot_init_yaw_rad), cos(robot_init_yaw_rad);
+  robot_init_rot << cos(robot_init_yaw_rad), -1.0 * sin(robot_init_yaw_rad), sin(robot_init_yaw_rad), cos(
+      robot_init_yaw_rad);
 
   Vector2f robot_initial_trans;
   robot_initial_trans << initPose.coordinates[0], initPose.coordinates[1];
@@ -357,11 +374,11 @@ double SteeringControl::calculateMahalanobisDistanceWithLocalMinima(const Pose p
   for (int i = 0; i < local_minima_vector_.size(); i++)
   {
     double distance_to_local_minima = calculateMahalanobisDistance(p1, local_minima_vector_[i]);
-    //TODO: Extract as parameter!
-    const double MAHAB_DISTANCE_THRESHOLD_TO_IGNORE_LOCAL_MINIMA = 3.0;
-    if (distance_to_local_minima < MAHAB_DISTANCE_THRESHOLD_TO_IGNORE_LOCAL_MINIMA)
+
+    if (distance_to_local_minima < ackermann_control_params_.mahalanobis_distance_threshold_to_ignore_local_minima)
     {
-      double penalty = (MAHAB_DISTANCE_THRESHOLD_TO_IGNORE_LOCAL_MINIMA / (0.001 + distance_to_local_minima)) - 1.0;
+      double penalty = (ackermann_control_params_.mahalanobis_distance_threshold_to_ignore_local_minima
+          / (0.001 + distance_to_local_minima)) - 1.0;
       if (penalty > 0)
         total_mahalanobis_distance += penalty;
     }
