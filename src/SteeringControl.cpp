@@ -101,14 +101,81 @@ bool SteeringControl::collision(const float steering_angle_deg, const pcl::Point
   return (collision);
 }
 
+float SteeringControl::findMaxRecommendedSpeed(const float steering_angle_deg,
+                                               const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles, const bool forward)
+{
+  //std::cout << "findMaxRecommendedSpeed" << std::endl;
+
+  float safety_width = robot_params_.width + 2.0 * collision_avoidance_params_.safety_lateral_margin;
+
+  pcl::PointCloud < pcl::PointXYZI > obstacles_filtered;
+
+  if (fabs(steering_angle_deg) < 0.001) // if the steering is close to zero, the center is at infinity, so we assume straight line
+  {
+    this->filterPointsStraightLine(obstacles, forward, safety_width, obstacles_filtered);
+  }
+  else
+  {
+    this->filterPointsByTurningRadius(obstacles, forward, steering_angle_deg, safety_width, obstacles_filtered);
+  }
+
+  static const float OUT_OF_RANGE = 10000.0;
+
+  float x = 0.0;
+  float y = 0.0;
+  float distance;
+  float min_front_distance = OUT_OF_RANGE;
+  float min_back_distance = OUT_OF_RANGE;
+
+  for (size_t i = 0; i < obstacles_filtered.points.size(); ++i)
+  {
+    x = obstacles_filtered.points[i].x;
+    y = obstacles_filtered.points[i].y;
+
+    distance = sqrt(x * x + y * y);
+    if (x < 0.0 && distance < min_back_distance)
+    {
+      min_back_distance = distance;
+    }
+    if (x > 0.0 && distance < min_front_distance)
+    {
+      min_front_distance = distance;
+    }
+  }
+
+  float max_recommended_speed = 0.0;
+
+  if (forward)
+  {
+    float safety_length = robot_params_.x_distance_from_velodyne_to_front
+        + collision_avoidance_params_.safety_longitudinal_margin;
+
+    max_recommended_speed = (min_front_distance - safety_length)
+        / collision_avoidance_params_.time_to_reach_min_allowed_distance;
+  }
+  else
+  {
+    float safety_length = robot_params_.x_distance_from_velodyne_to_back
+        + collision_avoidance_params_.safety_longitudinal_margin;
+
+    max_recommended_speed = (min_back_distance - safety_length)
+        / collision_avoidance_params_.time_to_reach_min_allowed_distance;
+  }
+
+  if (max_recommended_speed > ackermann_control_params_.max_speed_meters_per_second)
+    max_recommended_speed = ackermann_control_params_.max_speed_meters_per_second;
+
+  return (max_recommended_speed);
+}
+
 void SteeringControl::printPosition(const Pose p, const string s)
 {
   cout << "Position '" << s << "' : " << "(" << p.coordinates[0] << "," << p.coordinates[1] << "," << p.coordinates[2]
       << "," << p.coordinates[3] << ")" << endl;
 }
 
-Direction SteeringControl::getBestSteering(const Pose initPose, const Pose finalPose,
-                                           const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles)
+SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const Pose finalPose,
+                                                      const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles)
 {
   /*
    std::cout << " initPose coordinates x, y, z, theta = " << initPose.coordinates[0] << ", " << initPose.coordinates[1]
@@ -142,7 +209,7 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
   }
 
   // Initialize values
-  Direction bestSteering;
+  SteeringAction bestAction;
 
   int do_while_iteration_number = 0;
   bool local_minima;
@@ -164,12 +231,14 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
     double minDistance = 100000000.0; // out ot range distance
     double newDistance = 0.0;
 
-    bestSteering.angle = 0.0;
-    bestSteering.sense = 0; //Sense of zero stops the vehicle
+    bestAction.angle = 0.0;
+    bestAction.sense = 0; //Sense of zero stops the vehicle
+    bestAction.max_recommended_speed_meters_per_second = 0.0;
 
     Pose nextPoseBackward = initPose;
     Pose nextPoseForward = initPose;
     Pose bestPose = initPose;
+    float bestSpeed = 0.0;
     local_minima = false;
     // Check all angles
     //std::cout << "Checking all angles!" << std::endl;
@@ -181,7 +250,8 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
       // Check the best pose forward
       bool forward = true;
       //std::cout << "Checking for forward collision!" << std::endl;
-      if (!collision(steering_angle_deg, obstacles, forward))
+      float recommendedSpeed = findMaxRecommendedSpeed(steering_angle_deg, obstacles, forward);
+      if (recommendedSpeed > ackermann_control_params_.min_speed_meters_per_second)
       {
         //std::cout << "Forward: predicting costs at steering_angle_deg = " << steering_angle_deg << std::endl;
         nextPoseForward = initPose;
@@ -208,8 +278,9 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
 
           if (newDistance < minDistance)
           {
-            bestSteering.angle = steering_angle_deg;
-            bestSteering.sense = 1;
+            bestAction.angle = steering_angle_deg;
+            bestAction.sense = 1;
+            bestAction.max_recommended_speed_meters_per_second = recommendedSpeed;
             bestPose = nextPoseForward;
             minDistance = newDistance;
           }
@@ -226,7 +297,8 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
       // Check the best pose backward
       //std::cout << "Checking for backward collision!" << std::endl;
       forward = false;
-      if (!collision(steering_angle_deg, obstacles, forward))
+      recommendedSpeed = findMaxRecommendedSpeed(steering_angle_deg, obstacles, forward);
+      if (recommendedSpeed > ackermann_control_params_.min_speed_meters_per_second)
       {
         //std::cout << "Backward: predicting costs at steering_angle_deg = " << steering_angle_deg << std::endl;
         nextPoseBackward = initPose;
@@ -244,8 +316,9 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
 
           if (newDistance < minDistance)
           {
-            bestSteering.angle = steering_angle_deg;
-            bestSteering.sense = -1;
+            bestAction.angle = steering_angle_deg;
+            bestAction.sense = -1;
+            bestAction.max_recommended_speed_meters_per_second = recommendedSpeed;
             bestPose = nextPoseBackward;
             minDistance = newDistance;
           }
@@ -259,12 +332,14 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
     }
 
     std::cout << "minDistance = " << minDistance << std::endl;
-    std::cout << "bestSteering.angle = " << bestSteering.angle << std::endl;
-    std::cout << "bestSteering.sense = " << bestSteering.sense << std::endl;
+    std::cout << "bestAction.angle = " << bestAction.angle << std::endl;
+    std::cout << "bestAction.sense = " << bestAction.sense << std::endl;
+    std::cout << "bestAction.max_recommended_speed_meters_per_second = "
+        << bestAction.max_recommended_speed_meters_per_second << std::endl;
     //std::getchar();
 
     bool forward = true;
-    if (bestSteering.sense == -1)
+    if (bestAction.sense == -1)
       forward = false;
 
     std::cout << "forward = " << forward << std::endl;
@@ -278,12 +353,13 @@ Direction SteeringControl::getBestSteering(const Pose initPose, const Pose final
       //getchar();
       local_minima = true;
       this->local_minima_vector_.push_back(initPose);
+      std::cout << "Total number of local minima = " << local_minima_vector_.size() << std::endl;
     }
   } while (local_minima);
 
   std::cout << "Total number of local minima = " << local_minima_vector_.size() << std::endl;
   //std::cout << "Returning best steering!" << std::endl;
-  return bestSteering;
+  return bestAction;
 }
 
 Pose SteeringControl::getNextPose(const Pose initPose, const float steering_angle_deg, const float distance_traveled,

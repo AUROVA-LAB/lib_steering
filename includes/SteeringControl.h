@@ -14,10 +14,11 @@
 using namespace std;
 using namespace Eigen;
 
-struct Direction
+struct SteeringAction
 {
   int sense;
   float angle;
+  float max_recommended_speed_meters_per_second;
 };
 
 struct Pose
@@ -51,6 +52,7 @@ struct AckermannControlParams
 {
   float max_speed_meters_per_second;
   float min_speed_meters_per_second;
+  float max_delta_speed;
   double mahalanobis_distance_threshold_to_ignore_local_minima;
 };
 
@@ -60,6 +62,7 @@ struct CollisionAvoidanceParams
   float safety_above_margin;
   float safety_longitudinal_margin;
   float min_obstacle_height;
+  float time_to_reach_min_allowed_distance;
 };
 
 class SteeringControl
@@ -84,6 +87,9 @@ private:
   bool collision(const float steering_angle_deg, const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles,
                  const bool forward);
 
+  float findMaxRecommendedSpeed(const float steering_angle_deg, const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles,
+                                const bool forward);
+
   double calculateMahalanobisDistanceWithLocalMinima(const Pose p1, const Pose p2);
 
 public:
@@ -94,10 +100,9 @@ public:
 
   void printPosition(const Pose p, const string s);
   double calculateMahalanobisDistance(const Pose p1, const Pose p2);
-  Pose getNextPose(const Pose initPose, const float steering_angle_deg, const float distance_traveled,
-                   const int sense);
-  Direction getBestSteering(const Pose initPose, const Pose finalPose,
-                            const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles);
+  Pose getNextPose(const Pose initPose, const float steering_angle_deg, const float distance_traveled, const int sense);
+  SteeringAction getBestSteeringAction(const Pose initPose, const Pose finalPose,
+                                       const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles);
 };
 
 #endif
