@@ -238,7 +238,7 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
     Pose nextPoseBackward = initPose;
     Pose nextPoseForward = initPose;
     Pose bestPose = initPose;
-    float bestSpeed = 0.0;
+
     local_minima = false;
     // Check all angles
     //std::cout << "Checking all angles!" << std::endl;
@@ -343,8 +343,6 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
       forward = false;
 
     std::cout << "forward = " << forward << std::endl;
-
-    //assert(!collision(bestSteering.angle, obstacles, forward));
 
     //std::cout << "Checking local minima!" << std::endl;
     if (minDistance >= currentDistance)
