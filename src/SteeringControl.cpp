@@ -197,14 +197,17 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
   }
 
   double distance_between_current_and_previous_goals = calculateMahalanobisDistance(finalPose, previous_final_pose);
-  //std::cout << "distance_between_current_and_previous_goals = " << distance_between_current_and_previous_goals << std::endl;
-  if (distance_between_current_and_previous_goals > 3.0)
+  std::cout << "distance_between_current_and_previous_goals = " << distance_between_current_and_previous_goals << std::endl;
+  if (distance_between_current_and_previous_goals > 0.001)
   {
     std::cout << "Goal change detected! clearing previous local minima information!" << std::endl;
     std::cout << "distance_between_current_and_previous_goals = " << distance_between_current_and_previous_goals
         << std::endl;
+
+    std::cout << "Number of local minima before cleaning = " << local_minima_vector_.size() << std::endl;
     local_minima_vector_.clear();
     previous_final_pose = finalPose;
+    std::cout << "Number of local minima AFTER cleaning = " << local_minima_vector_.size() << std::endl;
     //std::getchar();
   }
 
@@ -354,8 +357,21 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
       //getchar();
       local_minima = true;
       Pose local_minima_pose = initPose;
-      local_minima_pose.matrix[0][0] += 3.0;
-      local_minima_pose.matrix[1][1] += 3.0;
+
+      Eigen::Matrix2d control_matrix;
+      control_matrix << 9.0, 0.0, 0.0, 1.0;
+
+      double yaw_rad = local_minima_pose.coordinates[3] * M_PI / 180.0;
+
+      Eigen::Matrix2d rot;
+      rot << cos(yaw_rad), sin(yaw_rad), -1.0 * sin(yaw_rad), cos(yaw_rad);
+
+      control_matrix = rot * control_matrix;
+
+      local_minima_pose.matrix[0][0] += control_matrix(0, 0);
+      local_minima_pose.matrix[0][1] += control_matrix(0, 1);
+      local_minima_pose.matrix[1][0] += control_matrix(1, 0);
+      local_minima_pose.matrix[1][1] += control_matrix(1, 1);
 
       this->local_minima_vector_.push_back(local_minima_pose);
       std::cout << "Total number of local minima = " << local_minima_vector_.size() << std::endl;
