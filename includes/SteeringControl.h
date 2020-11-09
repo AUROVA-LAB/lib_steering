@@ -39,6 +39,7 @@ struct RobotParams
   float height;
   float ground_z_coordinate_in_sensor_frame_origin;
   float max_speed_meters_per_second;
+  float min_speed_meters_per_second;
 };
 
 struct AckermannPredictionParams
@@ -53,6 +54,7 @@ struct AckermannControlParams
   float max_speed_meters_per_second;
   float min_speed_meters_per_second;
   float max_delta_speed;
+  float final_goal_approximation_radius;
   double mahalanobis_distance_threshold_to_ignore_local_minima;
 };
 
