@@ -1,6 +1,5 @@
 #include "../includes/SteeringControl.h"
 
-
 SteeringControl::SteeringControl(const RobotParams robot_params,
                                  const AckermannPredictionParams ackerman_prediction_params,
                                  const AckermannControlParams ackermann_control_params,
@@ -185,15 +184,22 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
 {
 
   std::cout << " initPose coordinates x, y, z, theta = " << initPose.coordinates[0] << ", " << initPose.coordinates[1]
-      << ", " << initPose.coordinates[2] << ", " << initPose.coordinates[3] << "    variances x, y, z, theta = "
-      << initPose.matrix[0][0] << ", " << initPose.matrix[1][1] << ", " << initPose.matrix[2][2] << ", "
-      << initPose.matrix[3][3] << std::endl << std::endl;
+      << ", " << initPose.coordinates[2] << ", " << initPose.coordinates[3] << std::endl << "Covariance matrix: "
+      << std::endl << initPose.matrix[0][0] << ", " << initPose.matrix[0][1] << ", " << initPose.matrix[0][2] << ", "
+      << initPose.matrix[0][3] << std::endl << initPose.matrix[1][0] << ", " << initPose.matrix[1][1] << ", "
+      << initPose.matrix[1][2] << ", " << initPose.matrix[1][3] << std::endl << initPose.matrix[2][0] << ", "
+      << initPose.matrix[2][1] << ", " << initPose.matrix[2][2] << ", " << initPose.matrix[2][3] << std::endl
+      << initPose.matrix[3][0] << ", " << initPose.matrix[3][1] << ", " << initPose.matrix[3][2] << ", "
+      << initPose.matrix[3][3] << std::endl;
 
   std::cout << " finalPose coordinates = " << finalPose.coordinates[0] << ", " << finalPose.coordinates[1] << ", "
-      << finalPose.coordinates[2] << ", " << finalPose.coordinates[3] << "    variances x, y, z, theta = "
-      << finalPose.matrix[0][0] << ", " << finalPose.matrix[1][1] << ", " << finalPose.matrix[2][2] << ", "
-      << finalPose.matrix[3][3] << std::endl << std::endl;
-
+      << finalPose.coordinates[2] << ", " << finalPose.coordinates[3] << std::endl << "Covariance matrix: " << std::endl
+      << finalPose.matrix[0][0] << ", " << finalPose.matrix[0][1] << ", " << finalPose.matrix[0][2] << ", "
+      << finalPose.matrix[0][3] << std::endl << finalPose.matrix[1][0] << ", " << finalPose.matrix[1][1] << ", "
+      << finalPose.matrix[1][2] << ", " << finalPose.matrix[1][3] << std::endl << finalPose.matrix[2][0] << ", "
+      << finalPose.matrix[2][1] << ", " << finalPose.matrix[2][2] << ", " << finalPose.matrix[2][3] << std::endl
+      << finalPose.matrix[3][0] << ", " << finalPose.matrix[3][1] << ", " << finalPose.matrix[3][2] << ", "
+      << finalPose.matrix[3][3] << std::endl;
 
   ///////////// Detecting goal change and cleaning past local minima information if the goal changes
   static Pose previous_final_pose;
@@ -204,8 +210,21 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
     first_iteration_ = false;
   }
 
-  double distance_between_current_and_previous_goals = calculateMahalanobisDistance(finalPose, previous_final_pose);
-  std::cout << "distance_between_current_and_previous_goals = " << distance_between_current_and_previous_goals << std::endl;
+  std::cout << " previous_final_pose coordinates = " << previous_final_pose.coordinates[0] << ", "
+      << previous_final_pose.coordinates[1] << ", " << previous_final_pose.coordinates[2] << ", "
+      << previous_final_pose.coordinates[3] << std::endl << "Covariance matrix: " << std::endl
+      << previous_final_pose.matrix[0][0] << ", " << previous_final_pose.matrix[0][1] << ", "
+      << previous_final_pose.matrix[0][2] << ", " << previous_final_pose.matrix[0][3] << std::endl
+      << previous_final_pose.matrix[1][0] << ", " << previous_final_pose.matrix[1][1] << ", "
+      << previous_final_pose.matrix[1][2] << ", " << previous_final_pose.matrix[1][3] << std::endl
+      << previous_final_pose.matrix[2][0] << ", " << previous_final_pose.matrix[2][1] << ", "
+      << previous_final_pose.matrix[2][2] << ", " << previous_final_pose.matrix[2][3] << std::endl
+      << previous_final_pose.matrix[3][0] << ", " << previous_final_pose.matrix[3][1] << ", "
+      << previous_final_pose.matrix[3][2] << ", " << previous_final_pose.matrix[3][3] << std::endl;
+
+  double distance_between_current_and_previous_goals = calculateBhattacharyyaDistance(finalPose, previous_final_pose);
+  std::cout << "distance_between_current_and_previous_goals = " << distance_between_current_and_previous_goals
+      << std::endl;
   if (distance_between_current_and_previous_goals > 0.001)
   {
     std::cout << "Goal change detected! clearing previous local minima information!" << std::endl;
@@ -232,7 +251,7 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
     do_while_iteration_number++;
     std::cout << "do while iteration number = " << do_while_iteration_number << std::endl;
     //std::cout << "computing current mahalanobis distance!" << std::endl;
-    double currentDistance = calculateMahalanobisDistanceWithLocalMinima(initPose, finalPose);
+    double currentDistance = calculateBhattacharyyaDistanceWithLocalMinima(initPose, finalPose);
     std::cout << "currentDistance = " << currentDistance << std::endl;
     std::cout << "currentEuclidean distance = "
         << sqrt(
@@ -284,7 +303,7 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
            << ", " << nextPoseForward.matrix[1][1] << ", " << nextPoseForward.matrix[2][2] << ", "
            << nextPoseForward.matrix[3][3] << std::endl << std::endl;
            */
-          newDistance = calculateMahalanobisDistanceWithLocalMinima(nextPoseForward, finalPose);
+          newDistance = calculateBhattacharyyaDistanceWithLocalMinima(nextPoseForward, finalPose);
 
           //std::cout << "distance_traveled = " << distance_traveled << "    newMahalanobisDistance = " << newDistance << std::endl;
 
@@ -325,7 +344,7 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
             delta_distance)
         {
           nextPoseBackward = getNextPose(initPose, steering_angle_deg, distance_traveled, -1);
-          newDistance = calculateMahalanobisDistanceWithLocalMinima(nextPoseBackward, finalPose);
+          newDistance = calculateBhattacharyyaDistanceWithLocalMinima(nextPoseBackward, finalPose);
 
           //std::cout << "distance_traveled = " << distance_traveled << "    newMahalanobisDistance = " << newDistance << std::endl;
 
@@ -349,8 +368,7 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
     std::cout << "minDistance = " << minDistance << std::endl;
     std::cout << "bestAction.angle = " << bestAction.angle << std::endl;
     std::cout << "bestAction.sense = " << bestAction.sense << std::endl;
-    std::cout << "bestAction.speed = "
-        << bestAction.speed << std::endl;
+    std::cout << "bestAction.speed = " << bestAction.speed << std::endl;
     //std::getchar();
 
     bool forward = true;
@@ -435,42 +453,6 @@ Pose SteeringControl::getNextPose(const Pose initPose, const float steering_angl
 
   return next_pose_in_baselink_frame;
 }
-/*
- double SteeringControl::calculateMahalanobisDistance(const Pose p1, const Pose p2)
- {
- Vector4d vectorX;
- Vector4d vectorG;
- Vector4d vectorZ;
- Matrix4d matrixP;
- Matrix4d matrixQ;
- Matrix4d matrixZ;
-
- for (unsigned int i = 0; i < p2.coordinates.size(); i++)
- {
- vectorX(i) = p2.coordinates[i];
- }
- for (unsigned int i = 0; i < p1.coordinates.size(); i++)
- {
- vectorG(i) = p1.coordinates[i];
-
- }
- for (unsigned int i = 0; i < p2.matrix.size(); i++)
- {
- for (unsigned int j = 0; j < p2.matrix[i].size(); j++)
- {
- matrixP(i, j) = p2.matrix[i][j];
- matrixQ(i, j) = p1.matrix[i][j];
- }
- }
-
- vectorZ = vectorG - vectorX;
- matrixZ = matrixP * matrixQ * matrixP.transpose();
- double aux = (vectorZ.transpose() * matrixZ.inverse() * vectorZ).value();
- double mahalanobisDistance = sqrt(aux);
-
- return mahalanobisDistance;
- }
- */
 
 double SteeringControl::calculateMahalanobisDistance(const Pose p1, const Pose p2)
 {
@@ -503,6 +485,23 @@ double SteeringControl::calculateMahalanobisDistance(const Pose p1, const Pose p
   double aux = (z.transpose() * Z.inverse() * z).value();
   double mahalanobisDistance = sqrt(aux);
 
+  if (std::isnan(mahalanobisDistance))
+  {
+    std::cout << "g = " << g << std::endl;
+    std::cout << "Q = " << Q << std::endl << std::endl;
+
+    std::cout << "x = " << x << std::endl;
+    std::cout << "P = " << P << std::endl << std::endl;
+
+    std::cout << "z = " << z << std::endl;
+    std::cout << "Z = " << Z << std::endl << std::endl;
+
+    std::cout << "squared mahalanobis distance = " << aux << std::endl;
+    std::cout << "mahalanobis distance = " << mahalanobisDistance << std::endl << std::endl;
+
+    assert(false && "Error computing Mahalanobis distance!");
+  }
+
   return mahalanobisDistance;
 }
 
@@ -534,5 +533,91 @@ double SteeringControl::calculateMahalanobisDistanceWithLocalMinima(const Pose p
   //if (local_minima_vector_.size() > 0)
   //  std::cout << "Final Mahalanobis distance to goal = " << total_mahalanobis_distance << std::endl;
   return (total_mahalanobis_distance);
+}
+
+double SteeringControl::calculateBhattacharyyaDistance(const Pose p1, const Pose p2)
+{
+  Vector2d x;
+  Vector2d g;
+  Vector2d z;
+  Matrix2d P;
+  Matrix2d Q;
+  Matrix2d Z;
+
+  g(0) = p1.coordinates[0];
+  g(1) = p1.coordinates[1];
+
+  Q(0, 0) = p1.matrix[0][0];
+  Q(0, 1) = p1.matrix[0][1];
+  Q(1, 0) = p1.matrix[1][0];
+  Q(1, 1) = p1.matrix[1][1];
+
+  x(0) = p2.coordinates[0];
+  x(1) = p2.coordinates[1];
+
+  P(0, 0) = p2.matrix[0][0];
+  P(0, 1) = p2.matrix[0][1];
+  P(1, 0) = p2.matrix[1][0];
+  P(1, 1) = p2.matrix[1][1];
+
+  z = g - x;
+  Z = (P + Q) / 2.0;
+
+  double first_term = (z.transpose() * Z.inverse() * z);
+  double second_term = log(Z.determinant() / (sqrt(Q.determinant() * P.determinant()))) / 2.0;
+
+  //double bhattacharyya_distance = (first_term / 8.0) + second_term;
+  double bhattacharyya_distance = first_term;
+
+  //std::cout << "first  bhattacharyya_distance term = " << z.transpose() * Z.inverse() * z << std::endl;
+  //std::cout << "second bhattacharyya_distance term = " <<  (log(Z.determinant() / (sqrt(Q.determinant() * P.determinant()))) / 2.0) << std::endl;
+
+  if (std::isnan(bhattacharyya_distance))
+  {
+    std::cout << "g = " << g << std::endl;
+    std::cout << "Q = " << Q << std::endl << std::endl;
+
+    std::cout << "x = " << x << std::endl;
+    std::cout << "P = " << P << std::endl << std::endl;
+
+    std::cout << "z = " << z << std::endl;
+    std::cout << "Z = " << Z << std::endl << std::endl;
+
+    std::cout << "bhattacharyya_distance = " << bhattacharyya_distance << std::endl << std::endl;
+
+    assert(false && "Error computing bhattacharyya_distance!");
+  }
+
+  return bhattacharyya_distance;
+}
+
+double SteeringControl::calculateBhattacharyyaDistanceWithLocalMinima(const Pose p1, const Pose p2)
+{
+  double total_bhattacharyya_distance = calculateBhattacharyyaDistance(p1, p2);
+
+  for (int i = 0; i < local_minima_vector_.size(); i++)
+  {
+    //std::cout << "Current total_bhattacharyya_distance to goal = " << total_bhattacharyya_distance << std::endl;
+
+    double distance_to_local_minima = calculateBhattacharyyaDistance(p1, local_minima_vector_[i]);
+    //std::cout << "Current bhattacharyya_distance to local minima number " << i << " = " << distance_to_local_minima
+    //    << std::endl;
+    if (distance_to_local_minima < ackermann_control_params_.mahalanobis_distance_threshold_to_ignore_local_minima)
+    {
+      double penalty = (ackermann_control_params_.mahalanobis_distance_threshold_to_ignore_local_minima
+          / (0.001 + distance_to_local_minima)) - 1.0;
+      //std::cout << "Penalty for local minima number " << i << " = " << penalty << std::endl;
+
+      if (penalty > 0)
+        total_bhattacharyya_distance += penalty;
+
+      //std::cout << "Current bhattacharyya_distance to goal after local minima " << i << " = "
+      //    << total_bhattacharyya_distance << std::endl;
+    }
+  }
+
+  //if (local_minima_vector_.size() > 0)
+  //  std::cout << "Final bhattacharyya_distance to goal = " << total_bhattacharyya_distance << std::endl;
+  return (total_bhattacharyya_distance);
 }
 

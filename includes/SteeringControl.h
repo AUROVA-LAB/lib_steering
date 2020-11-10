@@ -94,6 +94,7 @@ private:
                                 const bool forward);
 
   double calculateMahalanobisDistanceWithLocalMinima(const Pose p1, const Pose p2);
+  double calculateBhattacharyyaDistanceWithLocalMinima(const Pose p1, const Pose p2);
 
 public:
   SteeringControl(const RobotParams robot_params, const AckermannPredictionParams ackerman_prediction_params,
@@ -103,6 +104,8 @@ public:
 
   void printPosition(const Pose p, const string s);
   double calculateMahalanobisDistance(const Pose p1, const Pose p2);
+  double calculateBhattacharyyaDistance(const Pose p1, const Pose p2);
+
   Pose getNextPose(const Pose initPose, const float steering_angle_deg, const float distance_traveled, const int sense);
   SteeringAction getBestSteeringAction(const Pose initPose, const Pose finalPose,
                                        const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles);
