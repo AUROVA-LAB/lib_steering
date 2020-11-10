@@ -18,7 +18,7 @@ struct SteeringAction
 {
   int sense;
   float angle;
-  float max_recommended_speed_meters_per_second;
+  float speed;
 };
 
 struct Pose

@@ -245,7 +245,7 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
 
     bestAction.angle = 0.0;
     bestAction.sense = 0; //Sense of zero stops the vehicle
-    bestAction.max_recommended_speed_meters_per_second = 0.0;
+    bestAction.speed = 0.0;
 
     Pose nextPoseBackward = initPose;
     Pose nextPoseForward = initPose;
@@ -294,7 +294,7 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
           {
             bestAction.angle = steering_angle_deg;
             bestAction.sense = 1;
-            bestAction.max_recommended_speed_meters_per_second = recommendedSpeed;
+            bestAction.speed = recommendedSpeed;
             bestPose = nextPoseForward;
             minDistance = newDistance;
           }
@@ -333,7 +333,7 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
           {
             bestAction.angle = steering_angle_deg;
             bestAction.sense = -1;
-            bestAction.max_recommended_speed_meters_per_second = recommendedSpeed;
+            bestAction.speed = recommendedSpeed;
             bestPose = nextPoseBackward;
             minDistance = newDistance;
           }
@@ -349,8 +349,8 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
     std::cout << "minDistance = " << minDistance << std::endl;
     std::cout << "bestAction.angle = " << bestAction.angle << std::endl;
     std::cout << "bestAction.sense = " << bestAction.sense << std::endl;
-    std::cout << "bestAction.max_recommended_speed_meters_per_second = "
-        << bestAction.max_recommended_speed_meters_per_second << std::endl;
+    std::cout << "bestAction.speed = "
+        << bestAction.speed << std::endl;
     //std::getchar();
 
     bool forward = true;
