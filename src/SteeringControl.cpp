@@ -1,5 +1,6 @@
 #include "../includes/SteeringControl.h"
 
+
 SteeringControl::SteeringControl(const RobotParams robot_params,
                                  const AckermannPredictionParams ackerman_prediction_params,
                                  const AckermannControlParams ackermann_control_params,
@@ -165,6 +166,11 @@ float SteeringControl::findMaxRecommendedSpeed(const float steering_angle_deg,
   if (max_recommended_speed > ackermann_control_params_.max_speed_meters_per_second)
     max_recommended_speed = ackermann_control_params_.max_speed_meters_per_second;
 
+  if (max_recommended_speed < 0.0)
+  {
+    max_recommended_speed = 0.0;
+    std::cout << "Warning in SteeringControl::findMaxRecommendedSpeed, negative speed!" << std::endl;
+  }
   return (max_recommended_speed);
 }
 
@@ -188,6 +194,8 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
       << finalPose.matrix[0][0] << ", " << finalPose.matrix[1][1] << ", " << finalPose.matrix[2][2] << ", "
       << finalPose.matrix[3][3] << std::endl << std::endl;
 
+
+  ///////////// Detecting goal change and cleaning past local minima information if the goal changes
   static Pose previous_final_pose;
 
   if (first_iteration_)
@@ -210,6 +218,7 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
     std::cout << "Number of local minima AFTER cleaning = " << local_minima_vector_.size() << std::endl;
     //std::getchar();
   }
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   // Initialize values
   SteeringAction bestAction;

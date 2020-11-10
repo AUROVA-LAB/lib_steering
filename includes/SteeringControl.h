@@ -70,6 +70,7 @@ struct CollisionAvoidanceParams
 class SteeringControl
 {
 private:
+
   RobotParams robot_params_;
   AckermannPredictionParams ackerman_prediction_params_;
   AckermannControlParams ackermann_control_params_;
