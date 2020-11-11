@@ -16,9 +16,10 @@ using namespace Eigen;
 
 struct SteeringAction
 {
-  int sense;
-  float angle;
-  float speed;
+  int    sense;
+  float  angle;
+  float  speed;
+  double min_predicted_distance;
 };
 
 struct Pose

@@ -183,23 +183,23 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
                                                       const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles)
 {
 
-  std::cout << " initPose coordinates x, y, z, theta = " << initPose.coordinates[0] << ", " << initPose.coordinates[1]
-      << ", " << initPose.coordinates[2] << ", " << initPose.coordinates[3] << std::endl << "Covariance matrix: "
-      << std::endl << initPose.matrix[0][0] << ", " << initPose.matrix[0][1] << ", " << initPose.matrix[0][2] << ", "
-      << initPose.matrix[0][3] << std::endl << initPose.matrix[1][0] << ", " << initPose.matrix[1][1] << ", "
-      << initPose.matrix[1][2] << ", " << initPose.matrix[1][3] << std::endl << initPose.matrix[2][0] << ", "
-      << initPose.matrix[2][1] << ", " << initPose.matrix[2][2] << ", " << initPose.matrix[2][3] << std::endl
-      << initPose.matrix[3][0] << ", " << initPose.matrix[3][1] << ", " << initPose.matrix[3][2] << ", "
-      << initPose.matrix[3][3] << std::endl;
-
-  std::cout << " finalPose coordinates = " << finalPose.coordinates[0] << ", " << finalPose.coordinates[1] << ", "
-      << finalPose.coordinates[2] << ", " << finalPose.coordinates[3] << std::endl << "Covariance matrix: " << std::endl
-      << finalPose.matrix[0][0] << ", " << finalPose.matrix[0][1] << ", " << finalPose.matrix[0][2] << ", "
-      << finalPose.matrix[0][3] << std::endl << finalPose.matrix[1][0] << ", " << finalPose.matrix[1][1] << ", "
-      << finalPose.matrix[1][2] << ", " << finalPose.matrix[1][3] << std::endl << finalPose.matrix[2][0] << ", "
-      << finalPose.matrix[2][1] << ", " << finalPose.matrix[2][2] << ", " << finalPose.matrix[2][3] << std::endl
-      << finalPose.matrix[3][0] << ", " << finalPose.matrix[3][1] << ", " << finalPose.matrix[3][2] << ", "
-      << finalPose.matrix[3][3] << std::endl;
+//  std::cout << " initPose coordinates x, y, z, theta = " << initPose.coordinates[0] << ", " << initPose.coordinates[1]
+//      << ", " << initPose.coordinates[2] << ", " << initPose.coordinates[3] << std::endl << "Covariance matrix: "
+//      << std::endl << initPose.matrix[0][0] << ", " << initPose.matrix[0][1] << ", " << initPose.matrix[0][2] << ", "
+//      << initPose.matrix[0][3] << std::endl << initPose.matrix[1][0] << ", " << initPose.matrix[1][1] << ", "
+//      << initPose.matrix[1][2] << ", " << initPose.matrix[1][3] << std::endl << initPose.matrix[2][0] << ", "
+//      << initPose.matrix[2][1] << ", " << initPose.matrix[2][2] << ", " << initPose.matrix[2][3] << std::endl
+//      << initPose.matrix[3][0] << ", " << initPose.matrix[3][1] << ", " << initPose.matrix[3][2] << ", "
+//      << initPose.matrix[3][3] << std::endl;
+//
+//  std::cout << " finalPose coordinates = " << finalPose.coordinates[0] << ", " << finalPose.coordinates[1] << ", "
+//      << finalPose.coordinates[2] << ", " << finalPose.coordinates[3] << std::endl << "Covariance matrix: " << std::endl
+//      << finalPose.matrix[0][0] << ", " << finalPose.matrix[0][1] << ", " << finalPose.matrix[0][2] << ", "
+//      << finalPose.matrix[0][3] << std::endl << finalPose.matrix[1][0] << ", " << finalPose.matrix[1][1] << ", "
+//      << finalPose.matrix[1][2] << ", " << finalPose.matrix[1][3] << std::endl << finalPose.matrix[2][0] << ", "
+//      << finalPose.matrix[2][1] << ", " << finalPose.matrix[2][2] << ", " << finalPose.matrix[2][3] << std::endl
+//      << finalPose.matrix[3][0] << ", " << finalPose.matrix[3][1] << ", " << finalPose.matrix[3][2] << ", "
+//      << finalPose.matrix[3][3] << std::endl;
 
   ///////////// Detecting goal change and cleaning past local minima information if the goal changes
   static Pose previous_final_pose;
@@ -210,17 +210,17 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
     first_iteration_ = false;
   }
 
-  std::cout << " previous_final_pose coordinates = " << previous_final_pose.coordinates[0] << ", "
-      << previous_final_pose.coordinates[1] << ", " << previous_final_pose.coordinates[2] << ", "
-      << previous_final_pose.coordinates[3] << std::endl << "Covariance matrix: " << std::endl
-      << previous_final_pose.matrix[0][0] << ", " << previous_final_pose.matrix[0][1] << ", "
-      << previous_final_pose.matrix[0][2] << ", " << previous_final_pose.matrix[0][3] << std::endl
-      << previous_final_pose.matrix[1][0] << ", " << previous_final_pose.matrix[1][1] << ", "
-      << previous_final_pose.matrix[1][2] << ", " << previous_final_pose.matrix[1][3] << std::endl
-      << previous_final_pose.matrix[2][0] << ", " << previous_final_pose.matrix[2][1] << ", "
-      << previous_final_pose.matrix[2][2] << ", " << previous_final_pose.matrix[2][3] << std::endl
-      << previous_final_pose.matrix[3][0] << ", " << previous_final_pose.matrix[3][1] << ", "
-      << previous_final_pose.matrix[3][2] << ", " << previous_final_pose.matrix[3][3] << std::endl;
+//  std::cout << " previous_final_pose coordinates = " << previous_final_pose.coordinates[0] << ", "
+//      << previous_final_pose.coordinates[1] << ", " << previous_final_pose.coordinates[2] << ", "
+//      << previous_final_pose.coordinates[3] << std::endl << "Covariance matrix: " << std::endl
+//      << previous_final_pose.matrix[0][0] << ", " << previous_final_pose.matrix[0][1] << ", "
+//      << previous_final_pose.matrix[0][2] << ", " << previous_final_pose.matrix[0][3] << std::endl
+//      << previous_final_pose.matrix[1][0] << ", " << previous_final_pose.matrix[1][1] << ", "
+//      << previous_final_pose.matrix[1][2] << ", " << previous_final_pose.matrix[1][3] << std::endl
+//      << previous_final_pose.matrix[2][0] << ", " << previous_final_pose.matrix[2][1] << ", "
+//      << previous_final_pose.matrix[2][2] << ", " << previous_final_pose.matrix[2][3] << std::endl
+//      << previous_final_pose.matrix[3][0] << ", " << previous_final_pose.matrix[3][1] << ", "
+//      << previous_final_pose.matrix[3][2] << ", " << previous_final_pose.matrix[3][3] << std::endl;
 
   double distance_between_current_and_previous_goals = calculateBhattacharyyaDistance(finalPose, previous_final_pose);
   std::cout << "distance_between_current_and_previous_goals = " << distance_between_current_and_previous_goals
@@ -235,11 +235,12 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
     local_minima_vector_.clear();
     previous_final_pose = finalPose;
     std::cout << "Number of local minima AFTER cleaning = " << local_minima_vector_.size() << std::endl;
-    //std::getchar();
   }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   // Initialize values
+  std::vector<SteeringAction> possible_actions;
+  SteeringAction action_being_evaluated;
   SteeringAction bestAction;
 
   int do_while_iteration_number = 0;
@@ -259,25 +260,24 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
                 + (initPose.coordinates[1] - finalPose.coordinates[1])
                     * (initPose.coordinates[1] - finalPose.coordinates[1])) << std::endl;
 
-    double minDistance = 100000000.0; // out ot range distance
     double newDistance = 0.0;
-
-    bestAction.angle = 0.0;
-    bestAction.sense = 0; //Sense of zero stops the vehicle
-    bestAction.speed = 0.0;
 
     Pose nextPoseBackward = initPose;
     Pose nextPoseForward = initPose;
-    Pose bestPose = initPose;
 
     local_minima = false;
-    bool there_is_at_least_one_valid_action = false;
+
     // Check all angles
     //std::cout << "Checking all angles!" << std::endl;
     for (float steering_angle_deg = -1.0 * robot_params_.abs_max_steering_angle_deg;
         steering_angle_deg <= robot_params_.abs_max_steering_angle_deg; steering_angle_deg +=
             ackerman_prediction_params_.delta_steering)
     {
+      action_being_evaluated.angle = 0.0;
+      action_being_evaluated.sense = 0; //Sense of zero stops the vehicle
+      action_being_evaluated.speed = 0.0;
+      action_being_evaluated.min_predicted_distance = 100000000.0; // out ot range distance
+
       //std::cout << "steering_angle_deg = " << steering_angle_deg << std::endl;
       // Check the best pose forward
       bool forward = true;
@@ -285,7 +285,10 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
       float recommendedSpeed = findMaxRecommendedSpeed(steering_angle_deg, obstacles, forward);
       if (recommendedSpeed > robot_params_.min_speed_meters_per_second)
       {
-        there_is_at_least_one_valid_action = true;
+        action_being_evaluated.angle = steering_angle_deg;
+        action_being_evaluated.sense = 1;
+        action_being_evaluated.speed = recommendedSpeed;
+
         //std::cout << "Forward: predicting costs at steering_angle_deg = " << steering_angle_deg << std::endl;
         nextPoseForward = initPose;
         float delta_distance = ackerman_prediction_params_.delta_time * robot_params_.max_speed_meters_per_second;
@@ -309,31 +312,30 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
 
           //std::getchar();
 
-          if (newDistance < minDistance)
-          {
-            bestAction.angle = steering_angle_deg;
-            bestAction.sense = 1;
-            bestAction.speed = recommendedSpeed;
-            bestPose = nextPoseForward;
-            minDistance = newDistance;
-          }
+          if (newDistance < action_being_evaluated.min_predicted_distance)
+            action_being_evaluated.min_predicted_distance = newDistance;
         }
-      }
-      else
-      {
-        //std::cout << "Forward collision detected! steering = " << steering_angle_deg << std::endl;
-        //std::getchar();
+        possible_actions.push_back(action_being_evaluated);
       }
 
       //std::getchar();
 
       // Check the best pose backward
       //std::cout << "Checking for backward collision!" << std::endl;
+
+      action_being_evaluated.angle = 0.0;
+      action_being_evaluated.sense = 0; //Sense of zero stops the vehicle
+      action_being_evaluated.speed = 0.0;
+      action_being_evaluated.min_predicted_distance = 100000000.0; // out ot range distance
+
       forward = false;
       recommendedSpeed = findMaxRecommendedSpeed(steering_angle_deg, obstacles, forward);
       if (recommendedSpeed > robot_params_.min_speed_meters_per_second)
       {
-        there_is_at_least_one_valid_action = true;
+        action_being_evaluated.angle = steering_angle_deg;
+        action_being_evaluated.sense = -1;
+        action_being_evaluated.speed = recommendedSpeed;
+
         //std::cout << "Backward: predicting costs at steering_angle_deg = " << steering_angle_deg << std::endl;
         nextPoseBackward = initPose;
         float delta_distance = ackerman_prediction_params_.delta_time * robot_params_.max_speed_meters_per_second;
@@ -348,63 +350,75 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
 
           //std::cout << "distance_traveled = " << distance_traveled << "    newMahalanobisDistance = " << newDistance << std::endl;
 
-          if (newDistance < minDistance)
-          {
-            bestAction.angle = steering_angle_deg;
-            bestAction.sense = -1;
-            bestAction.speed = recommendedSpeed;
-            bestPose = nextPoseBackward;
-            minDistance = newDistance;
-          }
+          if (newDistance < action_being_evaluated.min_predicted_distance)
+            action_being_evaluated.min_predicted_distance = newDistance;
         }
-      }
-      else
-      {
-        //std::cout << "Backward collision detected! steering = " << steering_angle_deg << std::endl;
-        //std::getchar();
+        possible_actions.push_back(action_being_evaluated);
       }
     }
 
-    std::cout << "minDistance = " << minDistance << std::endl;
+    bestAction.angle = 0.0;
+    bestAction.speed = 0.0;
+    bestAction.sense = 0;
+    bestAction.min_predicted_distance = currentDistance;
+    bool exists_good_action_without_obstacles = false;
+    for (int i = 0; i < possible_actions.size(); ++i)
+    {
+      if (possible_actions[i].speed == ackermann_control_params_.max_speed_meters_per_second) // there are no obstacles
+      {
+        if (possible_actions[i].min_predicted_distance < bestAction.min_predicted_distance)
+        {
+          exists_good_action_without_obstacles = true;
+          bestAction = possible_actions[i];
+        }
+      }
+    }
+
+    bool exists_good_action_with_obstacles = false;
+    if (!exists_good_action_without_obstacles)
+    {
+      for (int i = 0; i < possible_actions.size(); ++i)
+      {
+        if (possible_actions[i].min_predicted_distance < bestAction.min_predicted_distance)
+        {
+          exists_good_action_with_obstacles = true;
+          bestAction = possible_actions[i];
+        }
+      }
+    }
+
+    std::cout << "bestAction.min_predicted_distance = " << bestAction.min_predicted_distance << std::endl;
     std::cout << "bestAction.angle = " << bestAction.angle << std::endl;
     std::cout << "bestAction.sense = " << bestAction.sense << std::endl;
     std::cout << "bestAction.speed = " << bestAction.speed << std::endl;
     //std::getchar();
 
-    bool forward = true;
-    if (bestAction.sense == -1)
-      forward = false;
-
-    std::cout << "forward = " << forward << std::endl;
-
     //std::cout << "Checking local minima!" << std::endl;
-    if (minDistance >= currentDistance && there_is_at_least_one_valid_action)
-    {
-      /*
-       std::cout << "Local minima found!" << std::endl;
-       //getchar();
-       local_minima = true;
-       Pose local_minima_pose = initPose;
-
-       Eigen::Matrix2d control_matrix;
-       control_matrix << 9.0, 0.0, 0.0, 1.0;
-
-       double yaw_rad = local_minima_pose.coordinates[3] * M_PI / 180.0;
-
-       Eigen::Matrix2d rot;
-       rot << cos(yaw_rad), sin(yaw_rad), -1.0 * sin(yaw_rad), cos(yaw_rad);
-
-       control_matrix = rot * control_matrix;
-
-       local_minima_pose.matrix[0][0] += control_matrix(0, 0);
-       local_minima_pose.matrix[0][1] += control_matrix(0, 1);
-       local_minima_pose.matrix[1][0] += control_matrix(1, 0);
-       local_minima_pose.matrix[1][1] += control_matrix(1, 1);
-
-       this->local_minima_vector_.push_back(local_minima_pose);
-       std::cout << "Total number of local minima = " << local_minima_vector_.size() << std::endl;
-       */
-    }
+//    if (!exists_good_action_without_obstacles && !exists_good_action_with_obstacles)
+//    {
+//       std::cout << "Local minima found!" << std::endl;
+//       //getchar();
+//       local_minima = true;
+//       Pose local_minima_pose = initPose;
+//
+//       Eigen::Matrix2d control_matrix;
+//       control_matrix << 9.0, 0.0, 0.0, 1.0;
+//
+//       double yaw_rad = local_minima_pose.coordinates[3] * M_PI / 180.0;
+//
+//       Eigen::Matrix2d rot;
+//       rot << cos(yaw_rad), sin(yaw_rad), -1.0 * sin(yaw_rad), cos(yaw_rad);
+//
+//       control_matrix = rot * control_matrix;
+//
+//       local_minima_pose.matrix[0][0] += control_matrix(0, 0);
+//       local_minima_pose.matrix[0][1] += control_matrix(0, 1);
+//       local_minima_pose.matrix[1][0] += control_matrix(1, 0);
+//       local_minima_pose.matrix[1][1] += control_matrix(1, 1);
+//
+//       this->local_minima_vector_.push_back(local_minima_pose);
+//       std::cout << "Total number of local minima = " << local_minima_vector_.size() << std::endl;
+//    }
   } while (local_minima);
 
   std::cout << "Total number of local minima = " << local_minima_vector_.size() << std::endl;
