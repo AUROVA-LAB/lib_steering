@@ -380,28 +380,30 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
     //std::cout << "Checking local minima!" << std::endl;
     if (minDistance >= currentDistance && there_is_at_least_one_valid_action)
     {
-      std::cout << "Local minima found!" << std::endl;
-      //getchar();
-      local_minima = true;
-      Pose local_minima_pose = initPose;
+      /*
+       std::cout << "Local minima found!" << std::endl;
+       //getchar();
+       local_minima = true;
+       Pose local_minima_pose = initPose;
 
-      Eigen::Matrix2d control_matrix;
-      control_matrix << 9.0, 0.0, 0.0, 1.0;
+       Eigen::Matrix2d control_matrix;
+       control_matrix << 9.0, 0.0, 0.0, 1.0;
 
-      double yaw_rad = local_minima_pose.coordinates[3] * M_PI / 180.0;
+       double yaw_rad = local_minima_pose.coordinates[3] * M_PI / 180.0;
 
-      Eigen::Matrix2d rot;
-      rot << cos(yaw_rad), sin(yaw_rad), -1.0 * sin(yaw_rad), cos(yaw_rad);
+       Eigen::Matrix2d rot;
+       rot << cos(yaw_rad), sin(yaw_rad), -1.0 * sin(yaw_rad), cos(yaw_rad);
 
-      control_matrix = rot * control_matrix;
+       control_matrix = rot * control_matrix;
 
-      local_minima_pose.matrix[0][0] += control_matrix(0, 0);
-      local_minima_pose.matrix[0][1] += control_matrix(0, 1);
-      local_minima_pose.matrix[1][0] += control_matrix(1, 0);
-      local_minima_pose.matrix[1][1] += control_matrix(1, 1);
+       local_minima_pose.matrix[0][0] += control_matrix(0, 0);
+       local_minima_pose.matrix[0][1] += control_matrix(0, 1);
+       local_minima_pose.matrix[1][0] += control_matrix(1, 0);
+       local_minima_pose.matrix[1][1] += control_matrix(1, 1);
 
-      this->local_minima_vector_.push_back(local_minima_pose);
-      std::cout << "Total number of local minima = " << local_minima_vector_.size() << std::endl;
+       this->local_minima_vector_.push_back(local_minima_pose);
+       std::cout << "Total number of local minima = " << local_minima_vector_.size() << std::endl;
+       */
     }
   } while (local_minima);
 
@@ -566,13 +568,13 @@ double SteeringControl::calculateBhattacharyyaDistance(const Pose p1, const Pose
   double first_term = (z.transpose() * Z.inverse() * z);
   double second_term = log(Z.determinant() / (sqrt(Q.determinant() * P.determinant()))) / 2.0;
 
-  //double bhattacharyya_distance = (first_term / 8.0) + second_term;
-  double bhattacharyya_distance = first_term;
+  double bhattacharyya_distance = (first_term / 8.0) + second_term;
 
+  //double bhattacharyya_distance = first_term;
   //std::cout << "first  bhattacharyya_distance term = " << z.transpose() * Z.inverse() * z << std::endl;
   //std::cout << "second bhattacharyya_distance term = " <<  (log(Z.determinant() / (sqrt(Q.determinant() * P.determinant()))) / 2.0) << std::endl;
 
-  if (std::isnan(bhattacharyya_distance))
+  if (std::isnan(bhattacharyya_distance) || bhattacharyya_distance < 0.0)
   {
     std::cout << "g = " << g << std::endl;
     std::cout << "Q = " << Q << std::endl << std::endl;
@@ -581,7 +583,8 @@ double SteeringControl::calculateBhattacharyyaDistance(const Pose p1, const Pose
     std::cout << "P = " << P << std::endl << std::endl;
 
     std::cout << "z = " << z << std::endl;
-    std::cout << "Z = " << Z << std::endl << std::endl;
+    std::cout << "Z = " << Z << std::endl;
+    std::cout << "Z.inverse = " << Z.inverse() << std::endl << std::endl;
 
     std::cout << "bhattacharyya_distance = " << bhattacharyya_distance << std::endl << std::endl;
 
