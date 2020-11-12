@@ -23,12 +23,6 @@ struct SteeringAction
   double min_predicted_distance;
 };
 
-//struct Pose
-//{
-//  vector<double> coordinates;
-//  vector<vector<double> > matrix;
-//};
-
 struct RobotParams
 {
   float x_distance_from_velodyne_to_base_link;
@@ -86,8 +80,6 @@ private:
   CollisionAvoidanceParams collision_avoidance_params_;
 
   DistanceComputation distance_computator_;
-
-  bool first_iteration_;
 
   Pose current_pose_;
   std::vector<Pose> local_minima_vector_;
