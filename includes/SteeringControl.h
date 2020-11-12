@@ -7,6 +7,7 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/filters/passthrough.h>
+#include <planning/graph.h>
 
 #include <bits/stdc++.h>
 #include <string>
@@ -16,17 +17,17 @@ using namespace Eigen;
 
 struct SteeringAction
 {
-  int    sense;
-  float  angle;
-  float  speed;
+  int sense;
+  float angle;
+  float speed;
   double min_predicted_distance;
 };
 
-struct Pose
-{
-  vector<double> coordinates;
-  vector<vector<double> > matrix;
-};
+//struct Pose
+//{
+//  vector<double> coordinates;
+//  vector<vector<double> > matrix;
+//};
 
 struct RobotParams
 {
@@ -68,6 +69,13 @@ struct CollisionAvoidanceParams
   float time_to_reach_min_allowed_distance;
 };
 
+class DistanceComputation
+{
+public:
+  double calculateMahalanobisDistance(const Pose p1, const Pose p2);
+  double calculateBhattacharyyaDistance(const Pose p1, const Pose p2);
+};
+
 class SteeringControl
 {
 private:
@@ -77,8 +85,11 @@ private:
   AckermannControlParams ackermann_control_params_;
   CollisionAvoidanceParams collision_avoidance_params_;
 
+  DistanceComputation distance_computator_;
+
   bool first_iteration_;
 
+  Pose current_pose_;
   std::vector<Pose> local_minima_vector_;
 
   void filterPointsStraightLine(const pcl::PointCloud<pcl::PointXYZI>::Ptr input, const bool forward,
@@ -94,7 +105,6 @@ private:
   float findMaxRecommendedSpeed(const float steering_angle_deg, const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles,
                                 const bool forward);
 
-  double calculateMahalanobisDistanceWithLocalMinima(const Pose p1, const Pose p2);
   double calculateBhattacharyyaDistanceWithLocalMinima(const Pose p1, const Pose p2);
 
 public:
@@ -104,12 +114,23 @@ public:
   ~SteeringControl();
 
   void printPosition(const Pose p, const string s);
-  double calculateMahalanobisDistance(const Pose p1, const Pose p2);
-  double calculateBhattacharyyaDistance(const Pose p1, const Pose p2);
 
   Pose getNextPose(const Pose initPose, const float steering_angle_deg, const float distance_traveled, const int sense);
+
   SteeringAction getBestSteeringAction(const Pose initPose, const Pose finalPose,
                                        const pcl::PointCloud<pcl::PointXYZI>::Ptr obstacles);
+
+  void insertCurrentPoseInLocalMinimaVector(void)
+  {
+    local_minima_vector_.push_back(current_pose_);
+  }
+  ;
+
+  void clearLocalMinimaVector(void)
+  {
+    local_minima_vector_.clear();
+  }
+  ;
 };
 
 #endif

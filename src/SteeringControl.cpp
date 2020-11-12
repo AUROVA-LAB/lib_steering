@@ -222,7 +222,7 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
 //      << previous_final_pose.matrix[3][0] << ", " << previous_final_pose.matrix[3][1] << ", "
 //      << previous_final_pose.matrix[3][2] << ", " << previous_final_pose.matrix[3][3] << std::endl;
 
-  double distance_between_current_and_previous_goals = calculateBhattacharyyaDistance(finalPose, previous_final_pose);
+  double distance_between_current_and_previous_goals = distance_computator_.calculateBhattacharyyaDistance(finalPose, previous_final_pose);
   std::cout << "distance_between_current_and_previous_goals = " << distance_between_current_and_previous_goals
       << std::endl;
   if (distance_between_current_and_previous_goals > 0.001)
@@ -470,88 +470,47 @@ Pose SteeringControl::getNextPose(const Pose initPose, const float steering_angl
   return next_pose_in_baselink_frame;
 }
 
-double SteeringControl::calculateMahalanobisDistance(const Pose p1, const Pose p2)
+double DistanceComputation::calculateMahalanobisDistance(const Pose point, const Pose distribution)
 {
   Vector2d x;
-  Vector2d g;
+  Vector2d mu;
   Vector2d z;
-  Matrix2d P;
-  Matrix2d Q;
-  Matrix2d Z;
+  Matrix2d S;
 
-  g(0) = p1.coordinates[0];
-  g(1) = p1.coordinates[1];
+  x(0) = point.coordinates[0];
+  x(1) = point.coordinates[1];
 
-  Q(0, 0) = p1.matrix[0][0];
-  Q(0, 1) = p1.matrix[0][1];
-  Q(1, 0) = p1.matrix[1][0];
-  Q(1, 1) = p1.matrix[1][1];
+  mu(0) = distribution.coordinates[0];
+  mu(1) = distribution.coordinates[1];
 
-  x(0) = p2.coordinates[0];
-  x(1) = p2.coordinates[1];
+  S(0, 0) = distribution.matrix[0][0];
+  S(0, 1) = distribution.matrix[0][1];
+  S(1, 0) = distribution.matrix[1][0];
+  S(1, 1) = distribution.matrix[1][1];
 
-  P(0, 0) = p2.matrix[0][0];
-  P(0, 1) = p2.matrix[0][1];
-  P(1, 0) = p2.matrix[1][0];
-  P(1, 1) = p2.matrix[1][1];
+  z = x - mu;
 
-  z = g - x;
-  Z = P * Q * P.transpose();
+  double generalized_squared_interpoint_distance = (z.transpose() * S.inverse() * z).value();
+  double mahalanobis_distance = sqrt(generalized_squared_interpoint_distance);
 
-  double aux = (z.transpose() * Z.inverse() * z).value();
-  double mahalanobisDistance = sqrt(aux);
-
-  if (std::isnan(mahalanobisDistance))
+  if (std::isnan(mahalanobis_distance))
   {
-    std::cout << "g = " << g << std::endl;
-    std::cout << "Q = " << Q << std::endl << std::endl;
-
     std::cout << "x = " << x << std::endl;
-    std::cout << "P = " << P << std::endl << std::endl;
+
+    std::cout << "mu = " << mu << std::endl;
+    std::cout << "S = " << S << std::endl << std::endl;
 
     std::cout << "z = " << z << std::endl;
-    std::cout << "Z = " << Z << std::endl << std::endl;
 
-    std::cout << "squared mahalanobis distance = " << aux << std::endl;
-    std::cout << "mahalanobis distance = " << mahalanobisDistance << std::endl << std::endl;
+    std::cout << "generalized_squared_interpoint_distance = " << generalized_squared_interpoint_distance << std::endl;
+    std::cout << "mahalanobis distance = " << mahalanobis_distance << std::endl << std::endl;
 
     assert(false && "Error computing Mahalanobis distance!");
   }
-
-  return mahalanobisDistance;
+  return mahalanobis_distance;
 }
 
-double SteeringControl::calculateMahalanobisDistanceWithLocalMinima(const Pose p1, const Pose p2)
-{
-  double total_mahalanobis_distance = calculateMahalanobisDistance(p1, p2);
-
-  for (int i = 0; i < local_minima_vector_.size(); i++)
-  {
-    //std::cout << "Current Mahalanobis distance to goal = " << total_mahalanobis_distance << std::endl;
-
-    double distance_to_local_minima = calculateMahalanobisDistance(p1, local_minima_vector_[i]);
-    //std::cout << "Current Mahalanobis distance to local minima number " << i << " = " << distance_to_local_minima
-    //    << std::endl;
-    if (distance_to_local_minima < ackermann_control_params_.mahalanobis_distance_threshold_to_ignore_local_minima)
-    {
-      double penalty = (ackermann_control_params_.mahalanobis_distance_threshold_to_ignore_local_minima
-          / (0.001 + distance_to_local_minima)) - 1.0;
-      //std::cout << "Penalty for local minima number " << i << " = " << penalty << std::endl;
-
-      if (penalty > 0)
-        total_mahalanobis_distance += penalty;
-
-      //std::cout << "Current Mahalanobis distance to goal after local minima " << i << " = "
-      //    << total_mahalanobis_distance << std::endl;
-    }
-  }
-
-  //if (local_minima_vector_.size() > 0)
-  //  std::cout << "Final Mahalanobis distance to goal = " << total_mahalanobis_distance << std::endl;
-  return (total_mahalanobis_distance);
-}
-
-double SteeringControl::calculateBhattacharyyaDistance(const Pose p1, const Pose p2)
+double DistanceComputation::calculateBhattacharyyaDistance(const Pose p1, const Pose p2)
 {
   Vector2d x;
   Vector2d g;
@@ -610,13 +569,13 @@ double SteeringControl::calculateBhattacharyyaDistance(const Pose p1, const Pose
 
 double SteeringControl::calculateBhattacharyyaDistanceWithLocalMinima(const Pose p1, const Pose p2)
 {
-  double total_bhattacharyya_distance = calculateBhattacharyyaDistance(p1, p2);
+  double total_bhattacharyya_distance = distance_computator_.calculateBhattacharyyaDistance(p1, p2);
 
   for (int i = 0; i < local_minima_vector_.size(); i++)
   {
     //std::cout << "Current total_bhattacharyya_distance to goal = " << total_bhattacharyya_distance << std::endl;
 
-    double distance_to_local_minima = calculateBhattacharyyaDistance(p1, local_minima_vector_[i]);
+    double distance_to_local_minima = distance_computator_.calculateBhattacharyyaDistance(p1, local_minima_vector_[i]);
     //std::cout << "Current bhattacharyya_distance to local minima number " << i << " = " << distance_to_local_minima
     //    << std::endl;
     if (distance_to_local_minima < ackermann_control_params_.mahalanobis_distance_threshold_to_ignore_local_minima)
