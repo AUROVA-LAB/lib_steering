@@ -205,12 +205,12 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
   SteeringAction bestAction;
 
   double currentDistance = calculateBhattacharyyaDistanceWithLocalMinima(initPose, finalPose);
-  std::cout << "currentDistance = " << currentDistance << std::endl;
-  std::cout << "currentEuclidean distance = "
-      << sqrt(
-          (initPose.coordinates[0] - finalPose.coordinates[0]) * (initPose.coordinates[0] - finalPose.coordinates[0])
-              + (initPose.coordinates[1] - finalPose.coordinates[1])
-                  * (initPose.coordinates[1] - finalPose.coordinates[1])) << std::endl;
+  //std::cout << "currentBhattacharyyaDistance = " << currentDistance << std::endl;
+  //std::cout << "currentEuclidean distance = "
+  //    << sqrt(
+  //        (initPose.coordinates[0] - finalPose.coordinates[0]) * (initPose.coordinates[0] - finalPose.coordinates[0])
+  //            + (initPose.coordinates[1] - finalPose.coordinates[1])
+  //                * (initPose.coordinates[1] - finalPose.coordinates[1])) << std::endl;
 
   double newDistance = 0.0;
 
@@ -338,10 +338,10 @@ SteeringAction SteeringControl::getBestSteeringAction(const Pose initPose, const
     }
   }
 
-  std::cout << "bestAction.min_predicted_distance = " << bestAction.min_predicted_distance << std::endl;
-  std::cout << "bestAction.angle = " << bestAction.angle << std::endl;
-  std::cout << "bestAction.sense = " << bestAction.sense << std::endl;
-  std::cout << "bestAction.speed = " << bestAction.speed << std::endl;
+  //std::cout << "bestAction.min_predicted_distance = " << bestAction.min_predicted_distance << std::endl;
+  //std::cout << "bestAction.angle = " << bestAction.angle << std::endl;
+  //std::cout << "bestAction.sense = " << bestAction.sense << std::endl;
+  //std::cout << "bestAction.speed = " << bestAction.speed << std::endl;
 
   //std::cout << "Returning best steering!" << std::endl;
   return bestAction;
