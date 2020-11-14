@@ -494,11 +494,11 @@ double SteeringControl::calculateBhattacharyyaDistanceWithLocalMinima(const Pose
 
   for (int i = 0; i < local_minima_vector_.size(); i++)
   {
-    //std::cout << "Current total_bhattacharyya_distance to goal = " << total_bhattacharyya_distance << std::endl;
+    std::cout << "Current total_bhattacharyya_distance to goal = " << total_bhattacharyya_distance << std::endl;
 
-    double distance_to_local_minima = distance_computator_.calculateBhattacharyyaDistance(p1, local_minima_vector_[i]);
-    //std::cout << "Current bhattacharyya_distance to local minima number " << i << " = " << distance_to_local_minima
-    //    << std::endl;
+    double distance_to_local_minima = distance_computator_.calculateMahalanobisDistance(p1, local_minima_vector_[i]);
+    std::cout << "Current Mahalanobis distance to local minima number " << i << " = " << distance_to_local_minima
+        << std::endl;
     if (distance_to_local_minima < ackermann_control_params_.mahalanobis_distance_threshold_to_ignore_local_minima)
     {
       double penalty = (ackermann_control_params_.mahalanobis_distance_threshold_to_ignore_local_minima
